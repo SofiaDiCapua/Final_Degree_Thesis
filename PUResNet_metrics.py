@@ -89,3 +89,18 @@ def get_PLI(lig,pkt,resolution = 1):
     ligand=BindingPocket(lig_coords)
     pocket=BindingPocket(pkt_coords)
     return intersection_over_lig(ligand,pocket,resolution)
+
+
+# Chatgpt idea of DCC metric :
+
+def calculate_center(coords):
+    return np.mean(coords, axis=0)
+
+def calculate_DCC(file1, file2):
+    coords1 = coordinates(file1)
+    coords2 = coordinates(file2)
+    center1 = calculate_center(coords1)
+    center2 = calculate_center(coords2)
+    dcc = np.linalg.norm(center1 - center2)
+    return dcc
+
