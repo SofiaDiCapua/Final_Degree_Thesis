@@ -7,6 +7,8 @@ results/
 *.o
 *.7z
 
+# Ignorar la carpeta data y todo su contenido
+/data/
 
 # Environments
 .env
