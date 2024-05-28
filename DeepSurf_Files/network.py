@@ -8,8 +8,9 @@ Created on Thu Jan 30 15:13:37 2020
 
 import numpy as np, os
 import tensorflow as tf
-from tensorflow.contrib import slim
-from Final_Degree_Thesis.DeepSurf_Files.features import KalasantyFeaturizer
+from tensorflow.contrib import slim  # Eliminado porque tensorflow.contrib ya no existe en TF 2.x
+# En lugar de slim, utilizaremos tf.keras en el futuro
+from features import KalasantyFeaturizer
 
 
 class Network:

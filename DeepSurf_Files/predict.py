@@ -7,9 +7,9 @@ Created on Mon Jan 20 16:16:56 2020
 """
 
 import argparse, os
-from Final_Degree_Thesis.DeepSurf_Files.network import Network
-from Final_Degree_Thesis.DeepSurf_Files.protein import Protein
-from Final_Degree_Thesis.DeepSurf_Files.bsite_extraction import Bsite_extractor
+from network import Network
+from protein import Protein
+from bsite_extraction import Bsite_extractor
 
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)

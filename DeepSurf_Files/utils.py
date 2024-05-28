@@ -31,6 +31,7 @@ def mol2_reader(mol_file):  # does not handle H2
 
 def readSurfPoints(surf_file):
     # Reads the surface points and normals from a surface file
+    # "normals" are vectors that are perpendicular to the surface at a given point.
     with open(surf_file, 'r') as f:
         lines = f.readlines()
     

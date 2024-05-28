@@ -369,7 +369,7 @@ def rotation_matrix(axis, theta):
     if not isinstance(axis, (np.ndarray, list, tuple)):
         raise TypeError('axis must be an array of floats of shape (3,)')
     try:
-        axis = np.asarray(axis, dtype=np.float)
+        axis = np.asarray(axis, dtype=np.float64)
     except ValueError:
         raise ValueError('axis must be an array of floats of shape (3,)')
 
