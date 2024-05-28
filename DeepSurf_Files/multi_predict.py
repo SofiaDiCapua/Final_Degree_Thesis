@@ -7,9 +7,9 @@ Created on Tue Feb 25 16:04:47 2020
 """
 
 import argparse, os, time
-from network import Network
-from protein import Protein
-from bsite_extraction import Bsite_extractor
+from Final_Degree_Thesis.DeepSurf_Files.network import Network
+from Final_Degree_Thesis.DeepSurf_Files.protein import Protein
+from Final_Degree_Thesis.DeepSurf_Files.bsite_extraction import Bsite_extractor
 from tqdm import tqdm
 
 

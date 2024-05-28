@@ -6,8 +6,8 @@ Created on Mon Oct 21 11:46:54 2019
 @author: smylonas
 """
 
-import tfbio_data 
-from utils import rotation
+import Final_Degree_Thesis.DeepSurf_Files.tfbio_data as tfbio_data 
+from Final_Degree_Thesis.DeepSurf_Files.utils import rotation
 import numpy as np
      
 

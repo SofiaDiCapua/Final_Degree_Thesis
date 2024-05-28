@@ -9,7 +9,7 @@ Created on Thu Jan 30 15:13:37 2020
 import numpy as np, os
 import tensorflow as tf
 from tensorflow.contrib import slim
-from features import KalasantyFeaturizer
+from Final_Degree_Thesis.DeepSurf_Files.features import KalasantyFeaturizer
 
 
 class Network:

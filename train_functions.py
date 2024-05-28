@@ -5,7 +5,7 @@ import keras.backend as K
 from openbabel import pybel, openbabel
 from sklearn.model_selection import train_test_split
 
-from data import Featurizer, make_grid
+from Final_Degree_Thesis.PUResNet_files.data import Featurizer, make_grid
 from .net.PUResNet import PUResNet
 
 
@@ -15,7 +15,12 @@ def get_grids(file_type, prot_input_file, bs_input_file=None,
     '''
     Converts both a protein file (PDB or mol2) and its ligand (if specified)
     to a grid.
-        
+
+    To make a 16x16x16x18 grid max_dist should be 7.5 y grid_resolution =1  
+    beacause make_grid returns np.ndarray, shape = (M, M, M, F) and 
+    M is equal to (2 * `max_dist` / `grid_resolution`) + 1  
+    36x36x36x18 --> max_dist = 35 amd grid_resolution = 2
+    
     Parameters
     ----------
     file_type: "pdb", "mol2"
@@ -31,12 +36,15 @@ def get_grids(file_type, prot_input_file, bs_input_file=None,
     # Convert file into pybel object and get the features of the molecule. 
     # If binding site, features is an array of 1s (indicating that bs is present)
     prot = next(pybel.readfile(file_type,prot_input_file))
+    # SHOULD WE START CHENGING FROM HERE ?
     prot_coords, prot_features = featurizer.get_features(prot)
     
+
+    # THIS PART SHOULD BE CHANGED
     # Change all coordinates to be respect the center of the protein
     centroid = prot_coords.mean(axis=0)
     prot_coords -= centroid
-    # Create the grid
+    # Create the grid (we want to make more than one)
     prot_grid = make_grid(prot_coords, prot_features,
                         max_dist=max_dist,
                         grid_resolution=grid_resolution)

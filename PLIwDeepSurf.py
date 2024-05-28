@@ -15,14 +15,14 @@ from sklearn.model_selection import train_test_split
 import argparse, os
 
 
-from data import Featurizer, make_grid
+from Final_Degree_Thesis.PUResNet_files.data import Featurizer, make_grid
 from .net.PUResNet import PUResNet
 from train_functions import get_grids, get_training_data, DiceLoss
-from network import Network
-from protein import Protein
-from bsite_extraction import Bsite_extractor
-from predict_DeepSurf import parse_args
-from PUResNet_metrics import get_PLI
+from Final_Degree_Thesis.DeepSurf_Files.network import Network
+from Final_Degree_Thesis.DeepSurf_Files.protein import Protein
+from Final_Degree_Thesis.DeepSurf_Files.bsite_extraction import Bsite_extractor
+from Final_Degree_Thesis.DeepSurf_Files.predict import parse_args
+from Final_Degree_Thesis.PUResNet_files.metrics import get_PLI
 
 data_folder_path = "./data/test/coach420" # Poner nombre del zip
 
