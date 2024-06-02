@@ -8,29 +8,31 @@ Created on Thu Jan 30 15:13:37 2020
 
 import numpy as np, os
 import tensorflow as tf
-from tensorflow.contrib import slim  # Eliminado porque tensorflow.contrib ya no existe en TF 2.x
+# from tensorflow.contrib import slim  # Eliminado porque tensorflow.contrib ya no existe en TF 2.x
 # En lugar de slim, utilizaremos tf.keras en el futuro
-from features import KalasantyFeaturizer
+from features import KalasantyFeaturizer # Porque utiliza este si ya tiene uno en tfbio_data.py
 
 
 class Network:
     def __init__(self,model_path,model,voxelSize):
         gridSize = 16
-        tf.reset_default_graph()
-        self.inputs = tf.placeholder(tf.float32,shape=(None,gridSize,gridSize,gridSize,18))
+        tf.compat.v1.disable_eager_execution()
+        tf.compat.v1.reset_default_graph()
+        self.inputs = tf.compat.v1.placeholder(tf.float32,shape=(None,gridSize,gridSize,gridSize,18))
         
-        if model=='orig':
-            from net.resnet_3d import resnet_arg_scope, resnet_v1_18
-        elif model=='lds':
-            from net.resnet_lds_3d_bottleneck import resnet_arg_scope, resnet_v1_18
-        
-        with slim.arg_scope(resnet_arg_scope()):  
+        if model == 'orig':
+            from net.resnet_3d import resnet_v1_18
             self.net, self.end_points = resnet_v1_18(self.inputs, 1, is_training=False)
+        elif model == 'lds':
+            from net.resnet_lds_3d_bottleneck import resnet_v1_18
+            self.net, self.end_points = resnet_v1_18(self.inputs, 1, is_training=False)
+
+        # with slim.arg_scope(resnet_arg_scope()):  
+        #     self.net, self.end_points = resnet_v1_18(self.inputs, 1, is_training=False)
         
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=config)
-        
         self.sess.run(tf.global_variables_initializer()) 
         saver = tf.train.Saver()
         if model=='orig':

@@ -8,7 +8,7 @@ Created on Thu Jan 30 12:45:54 2020
 
 import os
 import numpy as np
-import pybel
+from openbabel import pybel
 from utils import simplify_dms
 
 class Protein:
