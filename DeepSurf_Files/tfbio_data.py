@@ -1,7 +1,6 @@
 """
 Original source of this file:
 from https://gitlab.com/cheminfIBB/tfbio
-ES DE DEEPSURF !!
 """
 
 import pickle
@@ -152,7 +151,7 @@ class Featurizer():
             self.NAMED_PROPS = named_properties
         else:
             # pybel.Atom properties to save
-            self.NAMED_PROPS = ['hyb', 'heavyvalence', 'heterovalence',
+            self.NAMED_PROPS = ['hyb', 'heavydegree', 'heterodegree',
                                 'partialcharge']
         self.FEATURE_NAMES += self.NAMED_PROPS
 
@@ -324,6 +323,7 @@ class Featurizer():
 
         return coords, features
 
+
     def to_pickle(self, fname='featurizer.pkl'):
         """Save featurizer in a given file. Featurizer can be restored with
         `from_pickle` method.
@@ -369,7 +369,7 @@ def rotation_matrix(axis, theta):
     if not isinstance(axis, (np.ndarray, list, tuple)):
         raise TypeError('axis must be an array of floats of shape (3,)')
     try:
-        axis = np.asarray(axis, dtype=np.float64)
+        axis = np.asarray(axis, dtype=np.float)
     except ValueError:
         raise ValueError('axis must be an array of floats of shape (3,)')
 
