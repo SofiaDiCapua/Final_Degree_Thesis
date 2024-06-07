@@ -48,6 +48,8 @@ def intersection_over_union(pocket1, pocket2, resolution):
 def intersection_over_lig(lig, pocket, resolution):
     grid1= create_3d_grid(lig, resolution)
     grid2 = create_3d_grid(pocket, resolution)
+    print(f'Grid1 shape: {grid1.shape}')
+    print(f'Grid2 shape: {grid2.shape}')
     
     common_grid_shape = np.maximum(grid1.shape, grid2.shape)
     
@@ -68,6 +70,7 @@ def intersection_over_lig(lig, pocket, resolution):
     intersection_grid = np.logical_and(grid1_padded, grid2_padded)
 
     intersection_volume = np.sum(intersection_grid) * resolution**3
+    print(f'Intersection volume: {intersection_volume}')
     lig_volume = np.sum(grid1_padded) * resolution**3
     
     return intersection_volume / lig_volume

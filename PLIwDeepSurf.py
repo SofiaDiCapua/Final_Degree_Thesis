@@ -1,61 +1,48 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 """
 On the test dataset Coach420 we will test the original version of DeepSurf 
-in other to be able to make a proper comparison analysis. 
+in order to be able to make a proper comparison analysis. 
+
+Attributes:
+    lig : .pdb file with the ligand of the molecule, should be passed with the protein.pdb file
+    pkt: .pdb file with the pocket predicted by the ANN
 """
 
-#!conda install -y -c conda-forge openbabel
-#Import files
-import os
-import warnings
 import numpy as np
-import keras
-import keras.backend as K
-from openbabel import pybel, openbabel
-from sklearn.model_selection import train_test_split
-import argparse, os
+import os
+from PUResNet_files.metrics import get_PLI
 
+def calculate_pli_scores(ligand_base_path, pocket_base_path):
+    # Verify that the base paths exist
+    if not os.path.exists(ligand_base_path):
+        raise IOError(f'The directory {ligand_base_path} does not exist.')
+    if not os.path.exists(pocket_base_path):
+        raise IOError(f'The directory {pocket_base_path} does not exist.')
+    
+    # List all subdirectories in the base directory for ligands and sort them
+    ligand_subdirs = sorted([d for d in os.listdir(ligand_base_path) if os.path.isdir(os.path.join(ligand_base_path, d))])
+    
+    # Initialize a list to store the PLI results
+    pli_scores = []
 
-from Final_Degree_Thesis.PUResNet_files.data import Featurizer, make_grid
-from .net.PUResNet import PUResNet
-from train_functions import get_grids, get_training_data, DiceLoss
-from Final_Degree_Thesis.DeepSurf_Files.network import Network
-from Final_Degree_Thesis.DeepSurf_Files.protein import Protein
-from Final_Degree_Thesis.DeepSurf_Files.bsite_extraction import Bsite_extractor
-from Final_Degree_Thesis.DeepSurf_Files.predict import parse_args
-from Final_Degree_Thesis.PUResNet_files.metrics import get_PLI
+    for subdir in ligand_subdirs:
+        ligand_file_path = os.path.join(ligand_base_path, subdir, 'ligand.pdb')
+        pocket_file_path = os.path.join(pocket_base_path, subdir, 'protein', 'pocket1.pdb')
+        
+        # Verify that both files exist
+        if os.path.exists(ligand_file_path) and os.path.exists(pocket_file_path):
+            print(f'Calculating PLI for {ligand_file_path} and {pocket_file_path}')
+            pli_score = get_PLI(ligand_file_path, pocket_file_path)
+            pli_scores.append(pli_score)
+        else:
+            print(f'Both files were not found in the directory {subdir}')
+    
+    return np.array(pli_scores)
 
-data_folder_path = "./data/test/coach420" # Poner nombre del zip
+# Use the function
+ligand_base_path = '/home/lmc/Documents/Sofia_TFG/Final_Degree_Thesis/data/test/coach420'
+pocket_base_path = '/home/lmc/Documents/Sofia_TFG/Final_Degree_Thesis/data/Results4PLI'
+pli_scores = calculate_pli_scores(ligand_base_path, pocket_base_path)
 
-proteins, binding_sites, _ = get_training_data(data_folder_path) # Deberiamos usar el de DeepSurf no ?
-
-# Upload testing data
-proteins = np.load(data_folder_path+'_proteins.npy')
-binding_sites = np.load(data_folder_path+'_binding_sites.npy')
-
-# Check that the two sets have the same number of testing parameters
-print(proteins.shape)
-print(binding_sites.shape)
-
-
-args = parse_args()
-
-if not os.path.exists(args.prot_file):
-    raise IOError('%s does not exist.' % args.prot_file)
-if not os.path.exists(args.model_path):
-    raise IOError('%s does not exist.' % args.model_path)
-if not os.path.exists(args.output):
-    os.makedirs(args.output)
-
-prot = Protein(args.prot_file,args.protonate,args.expand,args.f,args.output, args.discard_points, args.seed)
-
-nn = Network(args.model_path,args.model,args.voxel_size) 
-
-lig_scores = nn.get_lig_scores(prot,args.batch)
-
-extractor = Bsite_extractor(args.T)
-
-extractor.extract_bsites(prot,lig_scores)
-
-# Qu es lig y que es PKT ? Se tiene que hacer con un for en el dataset Coach420
-
-get_PLI(lig,pkt,resolution = 1)
+print('PLI Scores:', pli_scores)

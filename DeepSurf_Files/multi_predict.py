@@ -16,7 +16,7 @@ from tqdm import tqdm
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('--dataset_file', '-d', required=True, help='dataset file with protein names')
+    #parser.add_argument('--dataset_file', '-d', required=True, help='dataset file with protein names')
     parser.add_argument('--protein_path', '-pp', required=True, help='directory of protein files')
     parser.add_argument('--model_path', '-mp', required=True, help='directory of models')
     parser.add_argument('--model', '-m', choices=['orig','lds'], default='orig', help='select model')
@@ -44,20 +44,32 @@ if not os.path.exists(args.output):
 
 st = time.time()
 
-with open(args.dataset_file,'r') as f:
-    lines = f.readlines()
-
-protein_names = [line.strip() for line in lines if line!='\n']
+# Read subdirectories in alphabetical order
+subdirs = sorted([d for d in os.listdir(args.protein_path) if os.path.isdir(os.path.join(args.protein_path, d))]) #148l
 
 nn = Network(args.model_path, args.model, args.voxel_size)
 extractor = Bsite_extractor(args.T)
 
-for prot in tqdm(protein_names):
-    print(prot)
-    protein = Protein(os.path.join(args.protein_path,prot+'.pdb'), args.protonate, args.expand, args.f, args.output, args.discard_points, args.seed)
-    
-    lig_scores = nn.get_lig_scores(protein, args.batch)
-       
-    extractor.extract_bsites(protein, lig_scores)
+# Process each protein subdirectory
+for subdir in tqdm(subdirs):
+    protein_file = os.path.join(args.protein_path, subdir, 'protein.pdb')
+    if os.path.exists(protein_file):
+        print(subdir)
+        
+        # Create an output subdirectory for each protein
+        output_subdir = os.path.join(args.output, subdir)
+        if not os.path.exists(output_subdir):
+            os.makedirs(output_subdir)
 
+        # Create an instance of the Protein class for the current protein
+        # Setting a folder with the name of the analyzed protein where the results will be saved
+        protein = Protein(protein_file, args.protonate, args.expand, args.f, output_subdir, args.discard_points, args.seed)
+        
+        # Get ligand scores using the neural network
+        lig_scores = nn.get_lig_scores(protein, args.batch)
+        
+        # Extract binding sites using ligand scores
+        extractor.extract_bsites(protein, lig_scores)
+
+        
 print('Total time:', time.time()-st)

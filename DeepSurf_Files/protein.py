@@ -41,7 +41,7 @@ class Protein:
         self.heavy_atom_coords = np.array([atom.coords for atom in self.mol.atoms if atom.atomicnum > 1])
               
         self.binding_sites = []
-        if prot_file.endswith('pdb'):
+        if prot_file.endswith('pdb'): # Should we change this ????
             with open(prot_file,'r') as f:    
                 lines = f.readlines()
             self.heavy_atom_lines = [line for line in lines if line[:4]=='ATOM' and line.split()[2][0]!='H']

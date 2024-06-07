@@ -48,3 +48,4 @@ lig_scores = nn.get_lig_scores(prot,args.batch)
 extractor = Bsite_extractor(args.T)
 
 extractor.extract_bsites(prot,lig_scores)
+
