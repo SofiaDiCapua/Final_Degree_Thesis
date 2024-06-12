@@ -1,115 +1,158 @@
 #!conda install -y -c conda-forge openbabel
-#Import files
+# Import files
 import os
 import warnings
 import numpy as np
 import keras
 import keras.backend as K
 from openbabel import pybel
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold, train_test_split
+from sklearn.metrics import confusion_matrix, f1_score
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Conv3D
+import matplotlib.pyplot as plt
+import pandas as pd
 
 from PUResNet_files.data import Featurizer, make_grid
 from PUResNet_files.PUResNet import PUResNet
 from train_functions import get_grids, get_training_data, DiceLoss
 
-def modify_PUResNet(original_model, new_input_shape, new_output_shape):
-    # Create new input layer with the desired shape
-    new_input = Input(shape=new_input_shape)
+def modify_PUResNet(new_input_shape, new_output_shape, weights_path):
+    # Recreate the original model with the new input shape
+    modified_model = PUResNet(input_shape=new_input_shape)
     
-    # Get the intermediate layers from the original model
-    # We will apply the original model (minus the last layer) to the new input
-    intermediate_output = original_model(new_input)
+    # Load the weights from the original model, skipping the input layer
+    modified_model.load_weights(weights_path, by_name=True, skip_mismatch=True)
     
-    # Create a new output layer with the desired shape
-    new_output = Conv3D(filters=new_output_shape[-1], kernel_size=(3, 3, 3), activation='sigmoid', padding='same')(intermediate_output)
-    
-    # Build the new model
-    modified_model = Model(inputs=new_input, outputs=new_output)
+    # Ensure the output layer matches the desired output shape
+    new_output = Conv3D(filters=new_output_shape[-1], kernel_size=(3, 3, 3), activation='sigmoid', padding='same')(modified_model.layers[-2].output)
+    modified_model = Model(inputs=modified_model.input, outputs=new_output)
     
     return modified_model
 
-def train_function(data_folder_path, X_train, y_train):
+def plot_training_history(log_file_path, plot_file_path):
+    # Read the CSV log file
+    df = pd.read_csv(log_file_path)
+    
+    # Plot training & validation loss values
+    plt.figure()
+    plt.plot(df['epoch'], df['loss'], label='Training Loss')
+    plt.plot(df['epoch'], df['val_loss'], label='Validation Loss')
+    plt.title('Model Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend(loc='upper right')
+    plt.savefig(plot_file_path)
+    plt.close()
+    print(f"Training history plot saved to {plot_file_path}")
+
+def train_function(data_folder_path, X, y):
     # I have based myself on this tutorial:
     # https://keras.io/examples/vision/3D_image_classification/
 
     ## DEFINE VARIABLES ##
-    # In the paper, a batch size of 5 was used.
-    # They also found DiceLoss to be the best loss function to train the model
     batch_size = 5
     epochs = 300
     loss_function = DiceLoss
+    k = 4  # Number of folds for K-fold cross-validation
 
-
-    ## DEFINE CALLBACKS ##
-    # A Callback is an object that can perform actions at various stages of training
-    # ModelCheckpoint will save the best weights of the training
-    # EarlyStopping stops the training when val_loss stops improving
-    checkpoint_cb = keras.callbacks.ModelCheckpoint(
-        filepath=data_folder_path+"_best_weights.h5",
-        monitor = "val_loss",
-        save_best_only=True)
-    early_stopping_cb = keras.callbacks.EarlyStopping(monitor="val_loss", 
-                                                    patience=15)
-
-
-    ## TRAIN THE MODEL ##
-    # HERE IS WHERE THE FINE TUNNING IS MADE
-    original_model = PUResNet()
-    new_input_shape = (16, 16, 16, 18)
-    new_output_shape = (16, 16, 16, 1)
-
-    # Modify the model
-    modified_model = modify_PUResNet(original_model, new_input_shape, new_output_shape)
-
-    # Print the summary of the modified model
-    print(modified_model.summary())
-
-    modified_model.compile(loss=loss_function, optimizer='adam', metrics=['accuracy'])
+    kf = KFold(n_splits=k, shuffle=True, random_state=42)
     
-    # Train the modified model
-    modified_model.fit(X_train, y_train, 
-            batch_size=batch_size, epochs=epochs, 
-            validation_split=0.1, shuffle=True,
-            callbacks=[checkpoint_cb, early_stopping_cb])
+    # Store results for each fold
+    results = []
 
-    # Save the final model weights
-    weights_path = '/home/lmc/Documents/Sofia_TFG/Final_Degree_Thesis/PUResNet_files'
-    final_weights_path = os.path.join(weights_path, "final_weights.h5")
-    modified_model.save_weights(final_weights_path)
-    print(f"Final model weights saved to {final_weights_path}")
+    # Define a single checkpoint file
+    checkpoint_file = os.path.join(data_folder_path, "best_weights.h5")
 
-    # Optionally, save the entire model (architecture + weights)
-    final_model_path = os.path.join(weights_path, "final_model.h5")
-    modified_model.save(final_model_path)
-    print(f"Final model saved to {final_model_path}")
+    fold = 1
+    for train_index, test_index in kf.split(X):
+        print(f"Training fold {fold}...")
+        
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
 
+        ## DEFINE CALLBACKS ##
+        checkpoint_cb = keras.callbacks.ModelCheckpoint(
+            filepath=checkpoint_file,  # Single checkpoint file
+            monitor="val_loss",
+            save_best_only=True)
+        early_stopping_cb = keras.callbacks.EarlyStopping(monitor="val_loss", 
+                                                          patience=15)
+        csv_logger_cb = keras.callbacks.CSVLogger(os.path.join(data_folder_path, 'training_log.csv'))
+
+        ## TRAIN THE MODEL ##
+        # Create the original PUResNet model with the initial input shape
+        original_model = PUResNet(input_shape=(16, 16, 16, 18))
+
+        # Save weights of the original model for later reuse
+        original_weights_path = '/home/lmc/Documents/Sofia_TFG/whole_trained_model1.hdf'
+        original_model.save_weights(original_weights_path)
+
+        new_input_shape = (16, 16, 16, 18)
+        new_output_shape = (16, 16, 16, 1)
+
+        # Modify the model
+        modified_model = modify_PUResNet(new_input_shape, new_output_shape, original_weights_path)
+
+        # Print the summary of the modified model
+        print(modified_model.summary())
+
+        modified_model.compile(loss=loss_function, optimizer='adam', metrics=['accuracy'])
+        
+        # Train the modified model
+        modified_model.fit(X_train, y_train, 
+                batch_size=batch_size, epochs=epochs, 
+                validation_split=0.1, shuffle=True,
+                callbacks=[checkpoint_cb, early_stopping_cb, csv_logger_cb])
+
+        # Evaluate the model
+        y_pred = (modified_model.predict(X_test) > 0.5).astype("int32")
+
+        # Calculate metrics
+        tn, fp, fn, tp = confusion_matrix(y_test.flatten(), y_pred.flatten()).ravel()
+        f1 = f1_score(y_test.flatten(), y_pred.flatten())
+
+        results.append({
+            "Fold": fold,
+            "TP": tp,
+            "FP": fp,
+            "FN": fn,
+            "F1 score": f1
+        })
+
+        fold += 1
+
+    # Print results as a table
+    results_df = pd.DataFrame(results)
+    results_df.loc['Average'] = results_df.mean()
+    print(results_df)
+
+    # Optionally, save the results to a CSV file
+    results_df.to_csv(os.path.join(data_folder_path, 'k_fold_results.csv'), index=False)
+
+    # Plot the training history for the last fold
+    log_file_path = os.path.join(data_folder_path, 'training_log.csv')
+    plot_file_path = os.path.join(data_folder_path, 'training_history_plot.png')
+    plot_training_history(log_file_path, plot_file_path)
 
 
 if __name__ == "__main__":
     
     data_folder_path = "../data/train/final_data" # Poner nombre del zip
-    #Prepare the data
+    # Prepare the data
     # To not see any warnings: 
     pybel.ob.obErrorLog.StopLogging()
     # To see warnings: pybel.ob.obErrorLog.StartLogging()
     proteins, binding_sites, _ = get_training_data(data_folder_path) 
 
-    # Upload training data
-    proteins = np.load(data_folder_path+'_proteins.npy')
-    binding_sites = np.load(data_folder_path+'_binding_sites.npy')
+    # Remove unnecessary dimensions
+    proteins = np.squeeze(proteins, axis=1)
+    binding_sites = np.squeeze(binding_sites, axis=1)
 
     # Check that the two sets have the same number of training parameters
-    print(proteins.shape)
-    print(binding_sites.shape)
-
-    # Separate between train and test sets
-    X_train, X_test, y_train, y_test = train_test_split(proteins, 
-                                                        binding_sites, 
-                                                        test_size=0.2, 
-                                                        random_state=42)
+    print(proteins.shape) # It should give (2368, 16, 16, 16, 18)
+    print(binding_sites.shape) # It should give (2368, 16, 16, 16, 1)
 
     # Call train function
-    train_function(data_folder_path, X_train, y_train)
+    train_function(data_folder_path, proteins, binding_sites)
