@@ -90,13 +90,13 @@ class PUResNet(Model):
         x=Add()([x,shortcut])
         x=Activation('relu')(x)
         return x
-    def __init__(self, input_shape=(36, 36, 36, 18), featurizer=Featurizer(save_molecule_codes=False),scale=0.5,max_dist=35,**kwargs):
+    def __init__(self,featurizer=Featurizer(save_molecule_codes=False),scale=0.5,max_dist=35,**kwargs):
         self.featurizer=featurizer
         self.scale=scale
         self.max_dist=max_dist
         f=18
         b_axis=4
-        inputs = Input(input_shape, name='input')
+        inputs = Input((36, 36, 36, 18), name='input')
         x=self.conv_block(inputs,[f, f, f ],stage=2,block='a',strides=(1,1,1))
         x=self.identity_block(x,[f, f, f ],stage=2,block='b')
         x1=self.identity_block(x,[f, f, f ],stage=2,block='c')
