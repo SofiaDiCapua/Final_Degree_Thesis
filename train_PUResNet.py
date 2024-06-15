@@ -19,29 +19,6 @@ from PUResNet_files.data import Featurizer, make_grid
 from PUResNet_files.PUResNet import PUResNet
 from train_functions import get_grids, get_training_data, DiceLoss
 
-def load_weights_safe(model, weights_path, by_name=True, skip_mismatch=True):
-    try:
-        with h5py.File(weights_path, mode='r') as f:
-            if 'keras_version' in f.attrs:
-                keras_version = f.attrs['keras_version']
-                if isinstance(keras_version, bytes):
-                    keras_version = keras_version.decode('utf8')
-                else:
-                    keras_version = str(keras_version)
-            if 'backend' in f.attrs:
-                backend = f.attrs['backend']
-                if isinstance(backend, bytes):
-                    backend = backend.decode('utf8')
-                else:
-                    backend = str(backend)
-            # Proceed with loading weights
-            model.load_weights(weights_path, by_name=by_name, skip_mismatch=skip_mismatch)
-    except AttributeError as e:
-        if 'decode' in str(e):
-            # Handle the specific attribute error by manually loading the weights
-            model.load_weights(weights_path, by_name=by_name, skip_mismatch=skip_mismatch)
-
-
 def modify_PUResNet(new_input_shape, new_output_shape, weights_path):
     # Initialize the original model
     original_model = PUResNet()
@@ -90,8 +67,7 @@ def modify_PUResNet(new_input_shape, new_output_shape, weights_path):
     # Build the new model
     modified_model = Model(inputs=new_input, outputs=new_output)
 
-    # Load the weights safely from the original model, skipping the input and output layers that do not match
-    # load_weights_safe(modified_model, weights_path, by_name=True, skip_mismatch=True)
+    # Load the weights from the original model, skipping the input and output layers that do not match
     modified_model.load_weights(weights_path, by_name=True, skip_mismatch=True)
 
     return modified_model
@@ -113,86 +89,76 @@ def plot_training_history(log_file_path, plot_file_path):
     plt.close()
     print(f"Training history plot saved to {plot_file_path}")
 
-def train_function(data_folder_path, X, y, batch_size, epochs, loss_function, k):
-    # I have based myself on this tutorial:
-    # https://keras.io/examples/vision/3D_image_classification/
-
-
-    kf = KFold(n_splits=k, shuffle=True, random_state=42)
-    
-    # Store results for each fold
-    results = []
-
+def train_function(data_folder_path, X, y, batch_size, epochs, loss_function, final_weights_file):
     # Define a single checkpoint file
     checkpoint_file = os.path.join(data_folder_path, "best_weights.h5")
 
-    fold = 1
-    for train_index, test_index in kf.split(X):
-        print(f"Training fold {fold}...")
-        
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y[train_index], y[test_index]
+    ## DEFINE CALLBACKS ##
+    checkpoint_cb = keras.callbacks.ModelCheckpoint(
+        filepath=checkpoint_file,  # Single checkpoint file
+        monitor="val_loss",
+        save_best_only=True)
+    early_stopping_cb = keras.callbacks.EarlyStopping(monitor="val_loss", 
+                                                      patience=15)
+    csv_logger_cb = keras.callbacks.CSVLogger(os.path.join(data_folder_path, 'training_log.csv'))
 
-        ## DEFINE CALLBACKS ##
-        checkpoint_cb = keras.callbacks.ModelCheckpoint(
-            filepath=checkpoint_file,  # Single checkpoint file
-            monitor="val_loss",
-            save_best_only=True)
-        early_stopping_cb = keras.callbacks.EarlyStopping(monitor="val_loss", 
-                                                          patience=15)
-        csv_logger_cb = keras.callbacks.CSVLogger(os.path.join(data_folder_path, 'training_log.csv'))
+    ## TRAIN THE MODEL ##
+    # Create the original PUResNet model with the initial input shape
+    original_model = PUResNet()
 
-        ## TRAIN THE MODEL ##
-        # Create the original PUResNet model with the initial input shape
-        original_model = PUResNet()
+    # Save weights of the original model for later reuse
+    original_weights_path = '/home/lmc/Documents/Sofia_TFG/whole_trained_model1.hdf'
+    original_model.save_weights(original_weights_path)
 
-        # Save weights of the original model for later reuse
-        original_weights_path = '/home/lmc/Documents/Sofia_TFG/whole_trained_model1.hdf'
-        original_model.save_weights(original_weights_path)
+    new_input_shape = (16, 16, 16, 18)
+    new_output_shape = (16, 16, 16, 1)
 
-        new_input_shape = (16, 16, 16, 18)
-        new_output_shape = (16, 16, 16, 1)
+    # Modify the model
+    modified_model = modify_PUResNet(new_input_shape, new_output_shape, original_weights_path)
+    print("The modified model is created")
+    # Print the summary of the modified model
+    print(modified_model.summary())
 
-        # Modify the model
-        modified_model = modify_PUResNet(new_input_shape, new_output_shape, original_weights_path)
-        print("The modified model is created")
-        # Print the summary of the modified model
-        print(modified_model.summary())
+def plot_training_history(log_file_path, plot_file_path):
+    # Read the CSV log file
+    df = pd.read_csv(log_file_path)
+    
+    # Train the modified model
+    history = modified_model.fit(X, y, 
+            batch_size=batch_size, epochs=epochs, 
+            validation_split=0.1, shuffle=True,
+            callbacks=[checkpoint_cb, early_stopping_cb, csv_logger_cb])
 
-        modified_model.compile(loss=loss_function, optimizer='adam', metrics=['accuracy'])
-        
-        # Train the modified model
-        modified_model.fit(X_train, y_train, 
-                batch_size=batch_size, epochs=epochs, 
-                validation_split=0.1, shuffle=True,
-                callbacks=[checkpoint_cb, early_stopping_cb, csv_logger_cb])
+    # Save the trained weights
+    modified_model.save_weights(final_weights_file)
+    print(f"Final trained weights saved to {final_weights_file}")
 
-        # Evaluate the model
-        y_pred = (modified_model.predict(X_test) > 0.5).astype("int32")
+    # Optionally, save the training history to a file
+    history_df = pd.DataFrame(history.history)
+    history_df.to_csv(os.path.join(data_folder_path, 'training_history.csv'), index=False)
 
-        # Calculate metrics
-        tn, fp, fn, tp = confusion_matrix(y_test.flatten(), y_pred.flatten()).ravel()
-        f1 = f1_score(y_test.flatten(), y_pred.flatten())
+    # Evaluate the model
+    y_pred = (modified_model.predict(X) > 0.5).astype("int32")
 
-        results.append({
-            "Fold": fold,
-            "TP": tp,
-            "FP": fp,
-            "FN": fn,
-            "F1 score": f1
-        })
+    # Calculate metrics
+    tn, fp, fn, tp = confusion_matrix(y.flatten(), y_pred.flatten()).ravel()
+    f1 = f1_score(y.flatten(), y_pred.flatten())
 
-        fold += 1
+    results = {
+        "TP": tp,
+        "FP": fp,
+        "FN": fn,
+        "F1 score": f1
+    }
 
-    # Print results as a table
-    results_df = pd.DataFrame(results)
-    results_df.loc['Average'] = results_df.mean()
+    # Print results
+    results_df = pd.DataFrame([results])
     print(results_df)
 
     # Optionally, save the results to a CSV file
-    results_df.to_csv(os.path.join(data_folder_path, 'k_fold_results.csv'), index=False)
+    results_df.to_csv(os.path.join(data_folder_path, 'training_results.csv'), index=False)
 
-    # Plot the training history for the last fold
+    # Plot the training history
     log_file_path = os.path.join(data_folder_path, 'training_log.csv')
     plot_file_path = os.path.join(data_folder_path, 'training_history_plot.png')
     plot_training_history(log_file_path, plot_file_path)
@@ -201,9 +167,9 @@ def train_function(data_folder_path, X, y, batch_size, epochs, loss_function, k)
 if __name__ == "__main__":
     
     data_folder_path = "../data/train/final_data" 
-
+    final_weights_file = "../data"
     ## DEFINE VARIABLES ##
-    batch_size = 5
+    batch_size = 2
     epochs = 300
     loss_function = DiceLoss
     k = 4  # Number of folds for K-fold cross-validation
@@ -219,4 +185,4 @@ if __name__ == "__main__":
     print(binding_sites.shape) # It should give (2368, 16, 16, 16, 1)
 
     # Call train function
-    train_function(data_folder_path, proteins, binding_sites, batch_size, epochs, loss_function, k)
+    train_function(data_folder_path, proteins, binding_sites, batch_size, epochs, loss_function, final_weights_file)
