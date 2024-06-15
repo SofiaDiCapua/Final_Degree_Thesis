@@ -24,6 +24,13 @@ class KalasantyFeaturizer:
         _, self.channels = self.featurizer.get_features(mol)  # returns only heavy atoms
     
     def grid_feats(self,point,normal,mol_coords):
+        """
+        Aquí se obtiene una matriz de rotación Q a partir del vector normal normal. 
+        Luego, se calcula su inversa Q_inv. Las coordenadas de los átomos vecinos 
+        se trasladan para que el punto de interés sea el origen y se rotan usando 
+        la matriz de rotación inversa para alinear el vector normal con un eje 
+        específico (generalmente el eje z).
+        """
         neigh_atoms = np.sqrt(np.sum((mol_coords-point)**2,axis=1))<self.neigh_radius
         Q = rotation(normal)
         Q_inv = np.linalg.inv(Q)
