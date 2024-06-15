@@ -41,7 +41,7 @@ class Protein:
         self.heavy_atom_coords = np.array([atom.coords for atom in self.mol.atoms if atom.atomicnum > 1])
               
         self.binding_sites = []
-        if prot_file.endswith('pdb'): # Should we change this ????
+        if prot_file.endswith('pdb'):
             with open(prot_file,'r') as f:    
                 lines = f.readlines()
             self.heavy_atom_lines = [line for line in lines if line[:4]=='ATOM' and line.split()[2][0]!='H']
@@ -55,6 +55,9 @@ class Protein:
             raise IOError('Protein file should be .pdb')
               
     def _surfpoints_to_atoms(self,surfpoints):
+        """
+        surfpoints: una lista de coordenadas de puntos en el ASA !!!!
+        """
         close_atoms = np.zeros(len(surfpoints),dtype=int)
         for p,surf_coord in enumerate(surfpoints):
             dist = np.sqrt(np.sum((self.heavy_atom_coords-surf_coord)**2,axis=1))
