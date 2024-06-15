@@ -1,6 +1,7 @@
 #!conda install -y -c conda-forge openbabel
 # Import files
 import os
+import h5py
 import warnings
 import numpy as np
 import keras
@@ -9,8 +10,8 @@ from openbabel import pybel
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.metrics import confusion_matrix, f1_score
 import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Conv3D
+from keras.models import Model
+from keras.layers import Input, Conv3D, UpSampling3D, Cropping3D, ZeroPadding3D, BatchNormalization, Activation, Add, Concatenate
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -18,18 +19,83 @@ from PUResNet_files.data import Featurizer, make_grid
 from PUResNet_files.PUResNet import PUResNet
 from train_functions import get_grids, get_training_data, DiceLoss
 
+def load_weights_safe(model, weights_path, by_name=True, skip_mismatch=True):
+    try:
+        with h5py.File(weights_path, mode='r') as f:
+            if 'keras_version' in f.attrs:
+                keras_version = f.attrs['keras_version']
+                if isinstance(keras_version, bytes):
+                    keras_version = keras_version.decode('utf8')
+                else:
+                    keras_version = str(keras_version)
+            if 'backend' in f.attrs:
+                backend = f.attrs['backend']
+                if isinstance(backend, bytes):
+                    backend = backend.decode('utf8')
+                else:
+                    backend = str(backend)
+            # Proceed with loading weights
+            model.load_weights(weights_path, by_name=by_name, skip_mismatch=skip_mismatch)
+    except AttributeError as e:
+        if 'decode' in str(e):
+            # Handle the specific attribute error by manually loading the weights
+            model.load_weights(weights_path, by_name=by_name, skip_mismatch=skip_mismatch)
+
+
 def modify_PUResNet(new_input_shape, new_output_shape, weights_path):
-    # Recreate the original model with the new input shape
-    modified_model = PUResNet(input_shape=new_input_shape)
-    
-    # Load the weights from the original model, skipping the input layer
+    # Initialize the original model
+    original_model = PUResNet()
+
+    # Create new input layer with the desired shape
+    new_input = Input(shape=new_input_shape)
+
+    # Add new layers to adjust the new input to the original input shape
+    x = UpSampling3D(size=(2, 2, 2))(new_input)  # First upsample to (32, 32, 32)
+    x = ZeroPadding3D(padding=(2, 2, 2))(x)  # Pad dimensions to (36, 36, 36)
+    x = Conv3D(18, (3, 3, 3), activation='relu', padding='same')(x)
+
+    # Manually recreate the architecture of the original model
+    for layer in original_model.layers[1:]:
+        if isinstance(layer, Conv3D):
+            x = Conv3D(
+                filters=layer.filters,
+                kernel_size=layer.kernel_size,
+                strides=layer.strides,
+                padding=layer.padding,
+                activation=layer.activation,
+                kernel_regularizer=layer.kernel_regularizer
+            )(x)
+        elif isinstance(layer, UpSampling3D):
+            x = UpSampling3D(size=layer.size)(x)
+        elif isinstance(layer, ZeroPadding3D):
+            x = ZeroPadding3D(padding=layer.padding)(x)
+        elif isinstance(layer, Cropping3D):
+            x = Cropping3D(cropping=layer.cropping)(x)
+        elif isinstance(layer, BatchNormalization):
+            x = BatchNormalization(axis=layer.axis)(x)
+        elif isinstance(layer, Activation):
+            x = Activation(layer.activation)(x)
+        elif isinstance(layer, Add):
+            x = Add()([x, x])  # Note: Add layer's input handling needs attention
+        elif isinstance(layer, Concatenate):
+            x = Concatenate(axis=layer.axis)([x, x])  # Note: Concatenate layer's input handling needs attention
+        else:
+            raise ValueError(f"Layer type {type(layer)} is not handled in the reconstruction")
+
+    # Adjust the original output to the desired output shape
+    x = Conv3D(64, (3, 3, 3), activation='relu', padding='same')(x)
+    x = Cropping3D(cropping=((10, 10), (10, 10), (10, 10)))(x)
+    new_output = Conv3D(filters=new_output_shape[-1], kernel_size=(3, 3, 3), activation='sigmoid', padding='same')(x)
+
+    # Build the new model
+    modified_model = Model(inputs=new_input, outputs=new_output)
+
+    # Load the weights safely from the original model, skipping the input and output layers that do not match
+    # load_weights_safe(modified_model, weights_path, by_name=True, skip_mismatch=True)
     modified_model.load_weights(weights_path, by_name=True, skip_mismatch=True)
-    
-    # Ensure the output layer matches the desired output shape
-    new_output = Conv3D(filters=new_output_shape[-1], kernel_size=(3, 3, 3), activation='sigmoid', padding='same')(modified_model.layers[-2].output)
-    modified_model = Model(inputs=modified_model.input, outputs=new_output)
-    
+
     return modified_model
+
 
 def plot_training_history(log_file_path, plot_file_path):
     # Read the CSV log file
@@ -47,15 +113,10 @@ def plot_training_history(log_file_path, plot_file_path):
     plt.close()
     print(f"Training history plot saved to {plot_file_path}")
 
-def train_function(data_folder_path, X, y):
+def train_function(data_folder_path, X, y, batch_size, epochs, loss_function, k):
     # I have based myself on this tutorial:
     # https://keras.io/examples/vision/3D_image_classification/
 
-    ## DEFINE VARIABLES ##
-    batch_size = 5
-    epochs = 300
-    loss_function = DiceLoss
-    k = 4  # Number of folds for K-fold cross-validation
 
     kf = KFold(n_splits=k, shuffle=True, random_state=42)
     
@@ -83,7 +144,7 @@ def train_function(data_folder_path, X, y):
 
         ## TRAIN THE MODEL ##
         # Create the original PUResNet model with the initial input shape
-        original_model = PUResNet(input_shape=(16, 16, 16, 18))
+        original_model = PUResNet()
 
         # Save weights of the original model for later reuse
         original_weights_path = '/home/lmc/Documents/Sofia_TFG/whole_trained_model1.hdf'
@@ -94,7 +155,7 @@ def train_function(data_folder_path, X, y):
 
         # Modify the model
         modified_model = modify_PUResNet(new_input_shape, new_output_shape, original_weights_path)
-
+        print("The modified model is created")
         # Print the summary of the modified model
         print(modified_model.summary())
 
@@ -139,20 +200,23 @@ def train_function(data_folder_path, X, y):
 
 if __name__ == "__main__":
     
-    data_folder_path = "../data/train/final_data" # Poner nombre del zip
+    data_folder_path = "../data/train/final_data" 
+
+    ## DEFINE VARIABLES ##
+    batch_size = 5
+    epochs = 300
+    loss_function = DiceLoss
+    k = 4  # Number of folds for K-fold cross-validation
+
     # Prepare the data
     # To not see any warnings: 
     pybel.ob.obErrorLog.StopLogging()
     # To see warnings: pybel.ob.obErrorLog.StartLogging()
     proteins, binding_sites, _ = get_training_data(data_folder_path) 
 
-    # Remove unnecessary dimensions
-    proteins = np.squeeze(proteins, axis=1)
-    binding_sites = np.squeeze(binding_sites, axis=1)
-
     # Check that the two sets have the same number of training parameters
     print(proteins.shape) # It should give (2368, 16, 16, 16, 18)
     print(binding_sites.shape) # It should give (2368, 16, 16, 16, 1)
 
     # Call train function
-    train_function(data_folder_path, proteins, binding_sites)
+    train_function(data_folder_path, proteins, binding_sites, batch_size, epochs, loss_function, k)
