@@ -41,7 +41,8 @@ if not os.path.exists(args.output):
 
 prot = Protein(args.prot_file,args.protonate,args.expand,args.f,args.output, args.discard_points, args.seed)
 
-nn = Network(args.model_path,args.model,args.voxel_size) # CAMBIAR A PURESNET
+# You can change to PUResNet by passing model as PUResNet = -m in comand line
+nn = Network(args.model_path,args.model,args.voxel_size) 
 
 lig_scores = nn.get_lig_scores(prot,args.batch)
 
