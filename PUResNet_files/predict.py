@@ -1,6 +1,6 @@
 import os 
 from openbabel import pybel
-from net.PUResNet import PUResNet
+from PUResNet import PUResNet
 import argparse
 import numpy as np
 import glob
