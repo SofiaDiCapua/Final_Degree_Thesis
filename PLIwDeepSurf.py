@@ -41,8 +41,10 @@ def calculate_pli_scores(ligand_base_path, pocket_base_path):
     return np.array(pli_scores)
 
 # Use the function
-ligand_base_path = '/home/lmc/Documents/Sofia_TFG/Final_Degree_Thesis/data/test/coach420'
-pocket_base_path = '/home/lmc/Documents/Sofia_TFG/Final_Degree_Thesis/data/Results4PLI'
+ligand_base_path = '/home/lmc/Documents/Sofia_TFG/data/test/coach420'
+#pocket_base_path = '/home/lmc/Documents/Sofia_TFG/data/Results4PLI'
+pocket_base_path = '/home/lmc/Documents/Sofia_TFG/Final_Degree_Thesis/DeepSurf_Files'
+
 pli_scores = calculate_pli_scores(ligand_base_path, pocket_base_path)
 
 print('PLI Scores:', pli_scores)
