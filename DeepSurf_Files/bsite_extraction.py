@@ -11,6 +11,14 @@ from sklearn.cluster import MeanShift
 
 
 class Bsite_extractor():
+    """
+    The 3D Convolutional Neural Network (3D-CNN) generates a ligandability score 
+    for each selected point on the Solvent Accessible Surface (SAS). Points scoring 
+    below a threshold $T$ are eliminated. The remaining points are then clustered 
+    through the mean-shift algorithm. Finally, surface points within each cluster 
+    are assignated to their nearest protein atoms, thereby forming the desired 
+    binding sites. 
+    """
     def __init__(self,lig_thres,bw=15):
         self.T = lig_thres
         self.ms = MeanShift(bandwidth=bw,bin_seeding=True,cluster_all=False,n_jobs=4)
