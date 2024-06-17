@@ -133,7 +133,7 @@ def train_function(data_folder_path, X, y, batch_size, epochs, loss_function, fi
     original_model = PUResNet()
 
     # Save weights of the original model for later reuse
-    original_weights_path = '/home/ubuntu/tfg/Final_Degree_Thesis/whole_trained_model1.hdf'
+    original_weights_path = '/home/ubuntu/tfg/data/whole_trained_model1.hdf'
     original_model.save_weights(original_weights_path)
 
     new_input_shape = (16, 16, 16, 18)
@@ -146,6 +146,12 @@ def train_function(data_folder_path, X, y, batch_size, epochs, loss_function, fi
     print(modified_model.summary())
     
     modified_model.compile(loss=loss_function, optimizer = "adam", metrics=["accuracy", Recall(), Precision()])
+
+    # # OJO
+    # precision = tf.metrics.precision(labels, predictions)
+    # recall = tf.metrics.recall(labels, predictions)
+    # f1_score = 2 * ((precision * recall) / (precision + recall))
+
     
     # Train the modified model
     history = modified_model.fit(X, y, 
@@ -205,7 +211,7 @@ if __name__ == "__main__":
     # To not see any warnings: 
     pybel.ob.obErrorLog.StopLogging()
     # To see warnings: pybel.ob.obErrorLog.StartLogging()
-    proteins, binding_sites, _ = get_training_data(data_folder_path) 
+    proteins, binding_sites, _ = get_training_data(data_folder_path, proteins_pkl='../data/proteins.pkl', binding_sites_pkl='../data/binding_sites.pkl') 
 
     # Check that the two sets have the same number of training parameters
     print(proteins.shape) # It should give (2368, 16, 16, 16, 18)
