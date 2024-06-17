@@ -22,8 +22,37 @@ def modify_PUResNet(original_model, new_input_shape, new_output_shape):
     x = Conv3D(18, (3, 3, 3), activation='relu', padding='same')(x)  # Until now the only layer that has parameters
 
     # Apply each layer of the original model to the new input sequentially
-    for layer in original_model.layers[1:]:  # Skip the original input layer
-        x = layer(x)
+    #for layer in original_model.layers[1:]:  # Skip the original input layer
+    #    x = layer(x)
+    
+    # Manually recreate the architecture of the original model
+    for layer in original_model.layers[1:]:
+        if isinstance(layer, Conv3D):
+            x = Conv3D(
+                filters=layer.filters,
+                kernel_size=layer.kernel_size,
+                strides=layer.strides,
+                padding=layer.padding,
+                activation=layer.activation,
+                kernel_regularizer=layer.kernel_regularizer
+            )(x)
+        elif isinstance(layer, UpSampling3D):
+            x = UpSampling3D(size=layer.size)(x)
+        elif isinstance(layer, ZeroPadding3D):
+            x = ZeroPadding3D(padding=layer.padding)(x)
+        elif isinstance(layer, Cropping3D):
+            x = Cropping3D(cropping=layer.cropping)(x)
+        elif isinstance(layer, BatchNormalization):
+            x = BatchNormalization(axis=layer.axis)(x)
+        elif isinstance(layer, Activation):
+            x = Activation(layer.activation)(x)
+        elif isinstance(layer, Add):
+            x = Add()([x, x])  # Note: Add layer's input handling needs attention
+        elif isinstance(layer, Concatenate):
+            x = Concatenate(axis=layer.axis)([x, x])  # Note: Concatenate layer's input handling needs attention
+        else:
+            raise ValueError(f"Layer type {type(layer)} is not handled in the reconstruction")
+    
     
     # Adjust the original output to the desired output shape
     x = Conv3D(64, (3, 3, 3), activation='relu', padding='same')(x)
