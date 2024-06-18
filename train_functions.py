@@ -110,6 +110,7 @@ def from_pickle(fname):
         data = pickle.load(f)
     return data
 
+
 def get_training_data(input_folder, proteins_pkl='proteins.pkl', binding_sites_pkl='binding_sites.pkl'):
     """
     Returns a np array containing the protein grids, one np array with the binding_sites grids,
@@ -194,7 +195,6 @@ def DiceLoss(targets, inputs, smooth=1e-6):
     return 1 - dice
 
 
-
 def get_grids_V2(file_type, prot_input_file, bs_input_file=None,
               grid_resolution=2, max_dist=35, 
               featurizer=Featurizer(save_molecule_codes=False)):
@@ -219,27 +219,79 @@ def get_grids_V2(file_type, prot_input_file, bs_input_file=None,
     featurizer = KalasantyFeaturizer(gridSize,voxelSize) 
     featurizer.get_channels(protein.mol) 
 
-    gridSize = 16
-    lig_scores = []
-    input_data = np.zeros((batch_size,gridSize,gridSize,gridSize,18))  
-    batch_cnt = 0
+    prot_grids = []
     for p,n in zip(protein.surf_points,protein.surf_normals):
-            # Then make the grids
-            # grid_feats --> tfbio_data.make_grid()
-            input_data[batch_cnt,:,:,:,:] = self.featurizer.grid_feats(p,n,protein.heavy_atom_coords)  
-            batch_cnt += 1
-            if batch_cnt==batch_size:
-                # Something should be done in here, maybe return the grid ?
-                batch_cnt = 0
+        # Then make the grids
+        # grid_feats --> tfbio_data.make_grid()
+        grid = self.featurizer.grid_feats(p,n,protein.heavy_atom_coords)  
+        prot_grids.append(grid)
+    
+    # Convert list of grids to a numpy array
+    prot_grids = np.array(prot_grids)
      
     if bs_input_file:
         bs = next(pybel.readfile(file_type, bs_input_file))
-        bs_coords, _ = featurizer.get_features(bs)
+        # _get_channels --> featurizer.get_features --> return coords, features
+        # But we only need the coord because it's the output
+        bs_coords, bs_features = featurizer.get_channels(bs)
         bs_features = np.ones((len(bs_coords), 1))
-        bs_coords -= centroid
+        # bs_coords -= centroid
         bs_grid = make_grid(bs_coords, bs_features, max_dist=max_dist, grid_resolution=grid_resolution)
         print("Created binding site grid for:", bs_input_file)
     else:
         bs_grid = None
     
-    return prot_grid, bs_grid, centroid
+    return prot_grids, bs_grid, _
+
+def get_training_data_V2(input_folder, proteins_pkl='GOODproteins.pkl', binding_sites_pkl='binding_sites.pkl'):
+    """
+    Returns a np array containing the protein grids, one np array with the binding_sites grids,
+    and the NOT centroid coordinates for each one, is returned empty on purpose. 
+    """   
+    # Try to load from pickle files first
+    try:
+        proteins = from_pickle(proteins_pkl)
+        binding_sites = from_pickle(binding_sites_pkl)
+        print("Data loaded from pickle files.")
+        return proteins, binding_sites, []
+    except (FileNotFoundError, pickle.UnpicklingError):
+        print("No valid pickle files found, processing data...")
+
+    proteins = None
+    binding_sites = None
+    centroids = []
+
+    for root, dirs, _ in os.walk(input_folder, topdown=False):
+        for dir in dirs:
+            protein_file = os.path.join(root, dir, "protein.pdb")
+            site_file = os.path.join(root, dir, "cavity6.pdb")
+            
+            print("Processing protein file:", protein_file)
+            print("Processing binding site file:", site_file)
+
+            try:
+                # A new get_grids should be implemented and used here
+                prot_grids, bs_grid, centroid = get_grids_V2("pdb", protein_file, site_file, grid_resolution=1, max_dist=7.5)
+                if prot_grids is None:
+                    print("Failed to create grid for:", protein_file)
+                    continue
+                else: 
+                    for prot_grid in prot_grids:
+                        proteins = np.concatenate((proteins, prot_grid), axis=0)
+                    binding_sites = np.concatenate((binding_sites, bs_grid), axis=0)
+                
+                centroids.append(centroid)
+               
+            except Exception as e:
+                print(f"Error processing {protein_file}: {e}")
+        
+    if proteins is not None:
+        print("Number of proteins to train the model:", proteins.shape[0])
+    else:
+        print("No proteins found to train the model.")
+
+    # Save the data to pickle files
+    to_pickle(proteins, proteins_pkl)
+    to_pickle(binding_sites, binding_sites_pkl)
+
+    return proteins, binding_sites, centroids
