@@ -18,7 +18,7 @@ class KalasantyFeaturizer:
         self.neigh_radius = 4 + grid_radius   # 4 > 2*R_vdw
         self.featurizer = tfbio_data.Featurizer(save_molecule_codes=False)
         self.grid_resolution = voxelSize
-        self.max_dist = (gridSize-1)*voxelSize/2 
+        self.max_dist = (gridSize-1)*voxelSize/2 # To achieve (16,16,16) max_dist should be 7.5
     
     def get_channels(self,mol):
         _, self.channels = self.featurizer.get_features(mol)  # returns only heavy atoms

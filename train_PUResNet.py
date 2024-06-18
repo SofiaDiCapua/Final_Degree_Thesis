@@ -115,7 +115,7 @@ def plot_training_history(log_file_path, plot_file_path):
     plt.close()
     print(f"Training history plot saved to {plot_file_path}")
 
-def train_function(data_folder_path, X, y, batch_size, epochs, loss_function, final_weights_file):
+def train_function(data_folder_path, X, y, batch_size, epochs, loss_function, final_weights_file, model_name):
     # Define a single checkpoint file
     checkpoint_file = os.path.join(data_folder_path, "best_weights.h5")
 
@@ -160,16 +160,17 @@ def train_function(data_folder_path, X, y, batch_size, epochs, loss_function, fi
             callbacks=[checkpoint_cb, early_stopping_cb, csv_logger_cb])
 
     # Save the trained weights
-    modified_model.save_weights(final_weights_file)
-    print(f"Final trained weights saved to {final_weights_file}")
+    file_path = os.path.join(final_weights_file, f"final_weights_{model_name}.hdf")
+    modified_model.save_weights(file_path)
+    print(f"Final trained weights saved to {file_path}")
 
     # Optionally, save the training history to a file
     history_df = pd.DataFrame(history.history)
-    history_df.to_csv(os.path.join(data_folder_path, 'training_history.csv'), index=False)
+    history_df.to_csv(os.path.join(final_weights_file, f"training_history{model_name}.csv"), index=False)
     
     # Plot the training history
-    log_file_path = os.path.join(data_folder_path, 'training_log.csv')
-    plot_file_path = os.path.join(data_folder_path, 'training_history_plot.png')
+    log_file_path = os.path.join(final_weights_file, f"training_history{model_name}.csv")
+    plot_file_path = os.path.join(final_weights_file, f"training_history_plot_{model_name}.png")
     plot_training_history(log_file_path, plot_file_path)
 
 
@@ -203,7 +204,7 @@ if __name__ == "__main__":
     final_weights_file = "../data"
     ## DEFINE VARIABLES ##
     batch_size = 5
-    epochs = 300
+    epochs = 20
     loss_function = DiceLoss
     k = 4  # Number of folds for K-fold cross-validation
 
@@ -218,4 +219,4 @@ if __name__ == "__main__":
     print(binding_sites.shape) # It should give (2368, 16, 16, 16, 1)
 
     # Call train function
-    train_function(data_folder_path, proteins, binding_sites, batch_size, epochs, loss_function, final_weights_file)
+    train_function(data_folder_path, proteins, binding_sites, batch_size, epochs, loss_function, final_weights_file, model_name = "NoDeepSurf")

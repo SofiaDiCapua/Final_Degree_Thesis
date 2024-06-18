@@ -212,20 +212,26 @@ def get_grids_V2(file_type, prot_input_file, bs_input_file=None,
 
     # Create Protein object and process ASA with DMS and K-Means
     protein = Protein(prot_input_file)
-
+    
+    # To achieve (16,16,16) max_dist should be 7.5, max_dist = (gridSize-1)*voxelSize/2
     gridSize = 16
     voxelSize = 1
-    featurizer = KalasantyFeaturizer(gridSize,voxelSize)
+    featurizer = KalasantyFeaturizer(gridSize,voxelSize) 
+    featurizer.get_channels(protein.mol) 
 
-    prot_coords, prot_features = featurizer.get_channels(protein.mol) # = self.featurizer.get_features(mol)
-
-    features = featurizer.grid_feats(self,point,normal,mol_coords)
-
-    centroid = prot_coords.mean(axis=0)
-    prot_coords -= centroid
-
-    prot_grid = make_grid(prot_coords, prot_features, max_dist=max_dist, grid_resolution=grid_resolution)
-    
+    gridSize = 16
+    lig_scores = []
+    input_data = np.zeros((batch_size,gridSize,gridSize,gridSize,18))  
+    batch_cnt = 0
+    for p,n in zip(protein.surf_points,protein.surf_normals):
+            # Then make the grids
+            # grid_feats --> tfbio_data.make_grid()
+            input_data[batch_cnt,:,:,:,:] = self.featurizer.grid_feats(p,n,protein.heavy_atom_coords)  
+            batch_cnt += 1
+            if batch_cnt==batch_size:
+                # Something should be done in here, maybe return the grid ?
+                batch_cnt = 0
+     
     if bs_input_file:
         bs = next(pybel.readfile(file_type, bs_input_file))
         bs_coords, _ = featurizer.get_features(bs)
