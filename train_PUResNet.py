@@ -102,7 +102,7 @@ def modify_PUResNet(new_input_shape, new_output_shape, weights_path):
 def plot_training_history(log_file_path, plot_file_path):
     # Read the CSV log file
     df = pd.read_csv(log_file_path)
-    
+    df['epoch'] = range(1, len(df) + 1)
     # Plot training & validation loss values
     plt.figure()
     plt.plot(df['epoch'], df['loss'], label='Training Loss')

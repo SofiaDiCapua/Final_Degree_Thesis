@@ -107,6 +107,7 @@ For DeepSurf:
 
 ```
 python Final_Degree_Thesis/DeepSurf_Files/predict.py -p Final_Degree_Thesis/data/test/coach420/1a2k/protein.pdb -mp Final_Degree_Thesis/models -o .
+
 python predict.py -p ../data/test/coach420/1a4k/protein.pdb -mp models -o 1a4k
 ```
 

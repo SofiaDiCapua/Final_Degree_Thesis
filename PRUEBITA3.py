@@ -3,7 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-# Asegúrate de que las funciones get_grids y get_grids_V2 están definidas antes de este script.
+from train_functions import get_grids, get_grids_V2
+
+# Add folders to the PYTHONPATH
+sys.path.append(os.path.abspath('DeepSurf_Files'))
+sys.path.append(os.path.abspath('PUResNet_Files'))
+
 
 def visualize_grid(grid, title):
     fig = plt.figure()
@@ -41,8 +46,8 @@ def compare_grids(file_type, prot_input_file, bs_input_file=None):
 
 def main():
     file_type = 'pdb'
-    prot_input_file = 'path/to/protein.pdb'  # Cambia esto por la ruta correcta
-    bs_input_file = 'path/to/cavity6.pdb'  # Cambia esto por la ruta correcta, si es necesario
+    prot_input_file = '../data/test/coach420/1a2k/protein.pdb'  # Cambia esto por la ruta correcta
+    bs_input_file = '../data/test/coach420/1a2k/ligand.pdb'  # Cambia esto por la ruta correcta, si es necesario
 
     compare_grids(file_type, prot_input_file, bs_input_file)
 

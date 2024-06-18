@@ -6,10 +6,16 @@ Created on Mon Jan 20 16:16:56 2020
 @author: smylonas
 """
 
+import sys
 import argparse, os
-from network import Network
-from protein import Protein
-from bsite_extraction import Bsite_extractor
+
+# Add folders to the PYTHONPATH
+sys.path.append(os.path.abspath('DeepSurf_Files'))
+sys.path.append(os.path.abspath('PUResNet_Files'))
+
+from PUResNet_Files.network import Network
+from DeepSurf_Files.protein import Protein
+from DeepSurf_Files.bsite_extraction import Bsite_extractor
 
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)

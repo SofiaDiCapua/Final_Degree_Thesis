@@ -7,12 +7,12 @@ import keras.backend as K
 from openbabel import pybel
 from sklearn.model_selection import train_test_split
 
-# Añade las carpetas al PYTHONPATH
+# Add folders to the PYTHONPATH
 sys.path.append(os.path.abspath('DeepSurf_Files'))
 sys.path.append(os.path.abspath('PUResNet_Files'))
 
-from PUResNet_files.data import Featurizer, make_grid
-from PUResNet_files.PUResNet import PUResNet
+from PUResNet_Files.data import Featurizer, make_grid
+from PUResNet_Files.PUResNet import PUResNet
 from DeepSurf_Files.protein import Protein
 from DeepSurf_Files.features import KalasantyFeaturizer
 
@@ -211,7 +211,7 @@ def get_grids_V2(file_type, prot_input_file, bs_input_file=None,
         raise IOError("No such file: '%s'" % bs_input_file)
 
     # Create Protein object and process ASA with DMS and K-Means
-    protein = Protein(prot_input_file)
+    protein = Protein(prot_file=prot_input_file,protonate=False,expand_residue=False,f=10, save_path = "../data/ShitGeneratedBYdefault", discard_points=False)
     
     # To achieve (16,16,16) max_dist should be 7.5, max_dist = (gridSize-1)*voxelSize/2
     gridSize = 16

@@ -6,11 +6,14 @@ Created on Thu Jan 30 15:13:37 2020
 @author: smylonas
 """
 
+import sys
 import numpy as np, os
 import tensorflow as tf
 from tensorflow.contrib import slim
+
 from features import KalasantyFeaturizer
-from PUResNet_files.PUResNet import PUResNet
+
+from PUResNet_Files.PUResNet import PUResNet
 
 
 class Network:
