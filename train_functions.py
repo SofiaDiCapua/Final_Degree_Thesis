@@ -280,11 +280,15 @@ def get_training_data_V2(input_folder, proteins_pkl='GOODproteins.pkl', binding_
                 if prot_grids is None:
                     print("Failed to create grid for:", protein_file)
                     continue
-                else: 
-                    for prot_grid in prot_grids:
-                        proteins = np.concatenate((proteins, prot_grid), axis=0)
+                
+                if proteins is None:
+                    proteins = prot_grids
+                    binding_sites = bs_grid
+                else:
+                    proteins = np.concatenate((proteins, prot_grids), axis=0)
                     binding_sites = np.concatenate((binding_sites, bs_grid), axis=0)
                 
+                    
                 centroids.append(centroid)
                
             except Exception as e:

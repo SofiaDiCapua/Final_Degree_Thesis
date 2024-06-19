@@ -9,20 +9,16 @@ Created on Mon Jan 20 16:16:56 2020
 import sys
 import argparse, os
 
-# Add folders to the PYTHONPATH
-sys.path.append(os.path.abspath('DeepSurf_Files'))
-sys.path.append(os.path.abspath('PUResNet_Files'))
-
-from PUResNet_Files.network import Network
-from DeepSurf_Files.protein import Protein
-from DeepSurf_Files.bsite_extraction import Bsite_extractor
+from protein import Protein
+from bsite_extraction import Bsite_extractor
+from network import Network
 
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('--prot_file', '-p', required=True, help='input protein file (pdb)')
     parser.add_argument('--model_path', '-mp', required=True, help='directory of models')
-    parser.add_argument('--model', '-m', choices=['orig','lds'], default='orig', help='select model')
+    parser.add_argument('--model', '-m', choices=['PUResNet','orig','lds'], default='orig', help='select model')
     parser.add_argument('--output', '-o', required=True, help='name of the output directory')
     parser.add_argument('--f', type=int, default=10, help='parameter for the simplification of points mesh')
     parser.add_argument('--T', type=float, default=0.9, help='ligandability threshold')

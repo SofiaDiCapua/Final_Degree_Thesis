@@ -13,7 +13,14 @@ from tensorflow.contrib import slim
 
 from features import KalasantyFeaturizer
 
-from PUResNet_Files.PUResNet import PUResNet
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+# Añadir la ruta del directorio 'PUResNet_Files' al path
+puresnet_path = os.path.join(base_dir, 'PUResNet_Files')
+sys.path.append(puresnet_path)
+
+# Intentar importar el módulo
+from PUResNet import PUResNet
 
 
 class Network:
@@ -72,7 +79,8 @@ class Network:
                 output = self.sess.run(self.end_points,feed_dict={self.inputs:input_data}) 
                 lig_scores += list(output['probs'])
                 batch_cnt = 0
-        
+        print("Input dataaaaaa : ")
+        print(input_data[0])
         if batch_cnt>0:
             output = self.sess.run(self.end_points,feed_dict={self.inputs:input_data[:batch_cnt,:,:,:,:]}) 
             if batch_cnt==1:
