@@ -312,15 +312,15 @@ class Featurizer():
         #print 'nAtoms=',len(molecule.atoms)
         coords = np.array(coords, dtype=np.float32)
         features = np.array(features, dtype=np.float32)
-
+        
         if self.save_molecule_codes:
             features = np.hstack((features, molcode * np.ones((len(features), 1))))
-
+        
         features = np.hstack([features, self.find_smarts(molecule)[heavy_atoms]])
-
+        
         if np.isnan(features).any():
             raise RuntimeError('Got NaN when calculating features')
-
+        
         return coords, features
 
 

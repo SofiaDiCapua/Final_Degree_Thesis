@@ -1,6 +1,7 @@
 #!conda install -y -c conda-forge openbabel
 # Import files
 import os
+import sys
 import h5py
 import warnings
 import numpy as np
@@ -17,10 +18,14 @@ import pandas as pd
 from keras.regularizers import l2
 from tensorflow.keras.metrics import Precision, Recall
 
-from PUResNet_files.data import Featurizer, make_grid
-from PUResNet_files.PUResNet import PUResNet
-from train_functions import get_grids, get_training_data, DiceLoss
-from PUResNet_files.PUResNet import PUResNet
+# Add folders to the PYTHONPATH
+sys.path.append(os.path.abspath('DeepSurf_Files'))
+sys.path.append(os.path.abspath('PUResNet_Files'))
+
+from PUResNet_Files.data import Featurizer, make_grid
+from PUResNet_Files.PUResNet import PUResNet
+from train_functions import get_grids, get_training_data, get_grids_V2, get_training_data_V2, DiceLoss
+from PUResNet_Files.PUResNet import PUResNet
 
 
 def modify_PUResNet(new_input_shape, new_output_shape, weights_path):
@@ -212,7 +217,8 @@ if __name__ == "__main__":
     # To not see any warnings: 
     pybel.ob.obErrorLog.StopLogging()
     # To see warnings: pybel.ob.obErrorLog.StartLogging()
-    proteins, binding_sites, _ = get_training_data(data_folder_path, proteins_pkl='../data/proteins.pkl', binding_sites_pkl='../data/binding_sites.pkl') 
+    # proteins, binding_sites, _ = get_training_data(data_folder_path, proteins_pkl='../data/proteins.pkl', binding_sites_pkl='../data/binding_sites.pkl') 
+    proteins, binding_sites, _ = get_training_data_V2(data_folder_path, proteins_pkl='../data/GOODproteins.pkl', binding_sites_pkl='../data/GOODbinding_sites.pkl') 
 
     # Check that the two sets have the same number of training parameters
     print(proteins.shape) # It should give (2368, 16, 16, 16, 18)

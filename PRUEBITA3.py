@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -19,27 +20,40 @@ def visualize_grid(grid, title):
 
 def compare_grids(file_type, prot_input_file, bs_input_file=None):
     try:
+        print("Getting old grid")
         # Generar grids usando la función antigua
         prot_grid_old, bs_grid_old, centroid_old = get_grids(file_type, prot_input_file, bs_input_file, grid_resolution=1, max_dist=7.5)
+        print("Old grid achieved")
         # Generar grids usando la nueva función
+        print("Getting new grids")
         prot_grids_new, bs_grid_new, centroid_new = get_grids_V2(file_type, prot_input_file, bs_input_file, grid_resolution=1, max_dist=7.5)
+        print("New grids achieved")
 
-        # Visualizar los resultados
-        if prot_grid_old is not None:
-            print("Visualizando grid de la proteína usando la función antigua")
-            visualize_grid(prot_grid_old, "Old Function - Protein Grid")
 
-        if bs_grid_old is not None:
-            print("Visualizando grid del sitio de unión usando la función antigua")
-            visualize_grid(bs_grid_old, "Old Function - Binding Site Grid")
+        print("Prot_grid_old : \n" , prot_grid_old.shape)
+        print("Prot_grid_new : \n" , prot_grids_new[0].shape)
 
-        if prot_grids_new is not None and len(prot_grids_new) > 0:
-            print("Visualizando grid de la proteína usando la nueva función")
-            visualize_grid(prot_grids_new[0], "New Function - Protein Grid")
+        print("Prot_grid_old : \n" , prot_grid_old[0])
+        print(" ===============================================")
+        print("Prot_grid_new : \n" , prot_grids_new[0])
 
-        if bs_grid_new is not None:
-            print("Visualizando grid del sitio de unión usando la nueva función")
-            visualize_grid(bs_grid_new, "New Function - Binding Site Grid")
+        # # Visualizar los resultados
+        # if prot_grid_old is not None:
+        #     print("Visualizando grid de la proteína usando la función antigua")
+        #     print(prot_grid_old)
+        #     visualize_grid(prot_grid_old, "Old Function - Protein Grid")
+
+        # if bs_grid_old is not None:
+        #     print("Visualizando grid del sitio de unión usando la función antigua")
+        #     visualize_grid(bs_grid_old, "Old Function - Binding Site Grid")
+
+        # if prot_grids_new is not None and len(prot_grids_new) > 0:
+        #     print("Visualizando grid de la proteína usando la nueva función")
+        #     visualize_grid(prot_grids_new[0], "New Function - Protein Grid")
+
+        # if bs_grid_new is not None:
+        #     print("Visualizando grid del sitio de unión usando la nueva función")
+        #     visualize_grid(bs_grid_new, "New Function - Binding Site Grid")
 
     except Exception as e:
         print(f"Error: {e}")

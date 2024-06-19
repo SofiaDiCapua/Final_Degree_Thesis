@@ -9,7 +9,7 @@ from skimage.morphology import closing
 from skimage.measure import label
 from openbabel import pybel
 import openbabel
-from PUResNet_files.data import *
+from data import *
 # import tfbio.net
 import numpy as np
 

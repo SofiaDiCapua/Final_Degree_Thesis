@@ -22,7 +22,7 @@ class KalasantyFeaturizer:
     
     def get_channels(self,mol):
         _, self.channels = self.featurizer.get_features(mol)  # returns only heavy atoms
-    
+        
     def grid_feats(self,point,normal,mol_coords):
         """
         Aquí se obtiene una matriz de rotación Q a partir del vector normal normal. 

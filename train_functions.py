@@ -11,10 +11,12 @@ from sklearn.model_selection import train_test_split
 sys.path.append(os.path.abspath('DeepSurf_Files'))
 sys.path.append(os.path.abspath('PUResNet_Files'))
 
+import tfbio_data 
 from PUResNet_Files.data import Featurizer, make_grid
 from PUResNet_Files.PUResNet import PUResNet
 from DeepSurf_Files.protein import Protein
 from DeepSurf_Files.features import KalasantyFeaturizer
+
 
 def get_grids(file_type, prot_input_file, bs_input_file=None,
               grid_resolution=2, max_dist=35, 
@@ -211,29 +213,32 @@ def get_grids_V2(file_type, prot_input_file, bs_input_file=None,
         raise IOError("No such file: '%s'" % bs_input_file)
 
     # Create Protein object and process ASA with DMS and K-Means
-    protein = Protein(prot_file=prot_input_file,protonate=False,expand_residue=False,f=10, save_path = "../data/ShitGeneratedBYdefault", discard_points=False)
-    
+    protein = Protein(prot_file=prot_input_file,protonate=False,expand_residue=False,f=20, save_path = "../data/ShitGeneratedBYdefault", discard_points=False)
+
     # To achieve (16,16,16) max_dist should be 7.5, max_dist = (gridSize-1)*voxelSize/2
+    centroid = None
     gridSize = 16
     voxelSize = 1
     featurizer = KalasantyFeaturizer(gridSize,voxelSize) 
+    featurizer4bs = tfbio_data.Featurizer(save_molecule_codes=False)
+    # get_channels --> get_features --> returns coords, features
     featurizer.get_channels(protein.mol) 
 
     prot_grids = []
     for p,n in zip(protein.surf_points,protein.surf_normals):
         # Then make the grids
         # grid_feats --> tfbio_data.make_grid()
-        grid = self.featurizer.grid_feats(p,n,protein.heavy_atom_coords)  
+        grid = featurizer.grid_feats(p,n,protein.heavy_atom_coords)  
         prot_grids.append(grid)
-    
+
     # Convert list of grids to a numpy array
     prot_grids = np.array(prot_grids)
-     
+    
     if bs_input_file:
         bs = next(pybel.readfile(file_type, bs_input_file))
         # _get_channels --> featurizer.get_features --> return coords, features
         # But we only need the coord because it's the output
-        bs_coords, bs_features = featurizer.get_channels(bs)
+        bs_coords, bs_features =  featurizer4bs.get_features(bs)
         bs_features = np.ones((len(bs_coords), 1))
         # bs_coords -= centroid
         bs_grid = make_grid(bs_coords, bs_features, max_dist=max_dist, grid_resolution=grid_resolution)
@@ -241,7 +246,7 @@ def get_grids_V2(file_type, prot_input_file, bs_input_file=None,
     else:
         bs_grid = None
     
-    return prot_grids, bs_grid, _
+    return prot_grids, bs_grid, centroid
 
 def get_training_data_V2(input_folder, proteins_pkl='GOODproteins.pkl', binding_sites_pkl='binding_sites.pkl'):
     """
