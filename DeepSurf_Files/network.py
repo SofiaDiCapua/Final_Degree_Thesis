@@ -79,8 +79,7 @@ class Network:
                 output = self.sess.run(self.end_points,feed_dict={self.inputs:input_data}) 
                 lig_scores += list(output['probs'])
                 batch_cnt = 0
-        print("Input dataaaaaa : ")
-        print(input_data[0])
+                
         if batch_cnt>0:
             output = self.sess.run(self.end_points,feed_dict={self.inputs:input_data[:batch_cnt,:,:,:,:]}) 
             if batch_cnt==1:
