@@ -32,6 +32,8 @@ def compare_grids(file_type, prot_input_file, bs_input_file=None):
 
         print("Prot_grid_old : \n" , prot_grid_old.shape)
         print("Prot_grid_new : \n" , prot_grids_new.shape)
+        print("BS_grid_old : \n" , bs_grid_old.shape)
+        print("BS_grid_new : \n" , bs_grid_new.shape)
 
 
         # # Visualizar los resultados

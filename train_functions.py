@@ -197,56 +197,68 @@ def DiceLoss(targets, inputs, smooth=1e-6):
     return 1 - dice
 
 
+def create_binding_site_features(p, bs_coords):
+    """
+    Create binding site features where coordinates match bs_coords.
+    """
+    bs_features = 0
+    if any(np.allclose(p, bs_coord, atol=4) for bs_coord in bs_coords):    
+        bs_features = 1
+    return bs_features
+
 def get_grids_V2(file_type, prot_input_file, bs_input_file=None,
-              grid_resolution=2, max_dist=35, 
-              featurizer=Featurizer(save_molecule_codes=False)):
+                 grid_resolution=2, max_dist=35, 
+                 featurizer=Featurizer(save_molecule_codes=False)):
     """
     Converts both a protein file (PDB or mol2) and its ligand (if specified)
     to a grid.
     """
     prot_input_file = prot_input_file.replace('.ipynb_checkpoints/', '')
-    bs_input_file = bs_input_file.replace('.ipynb_checkpoints/', '')
+    if bs_input_file:
+        bs_input_file = bs_input_file.replace('.ipynb_checkpoints/', '')
 
     if not os.path.exists(prot_input_file):
         raise IOError("No such file: '%s'" % prot_input_file)
     if bs_input_file and not os.path.exists(bs_input_file):
         raise IOError("No such file: '%s'" % bs_input_file)
 
-    # Create Protein object and process ASA with DMS and K-Means
-    protein = Protein(prot_file=prot_input_file,protonate=False,expand_residue=False,f=20, save_path = "../data/ShitGeneratedBYdefault", discard_points=False)
-
-    # To achieve (16,16,16) max_dist should be 7.5, max_dist = (gridSize-1)*voxelSize/2
-    centroid = None
+    # Set grid size and voxel size
     gridSize = 16
     voxelSize = 1
-    featurizer = KalasantyFeaturizer(gridSize,voxelSize) 
+    featurizer = KalasantyFeaturizer(gridSize, voxelSize) 
     featurizer4bs = tfbio_data.Featurizer(save_molecule_codes=False)
-    # get_channels --> get_features --> returns coords, features
-    featurizer.get_channels(protein.mol) 
+
+    # Get binding site coordinates and features
+    bs = next(pybel.readfile(file_type, bs_input_file))
+    bs_coords, _ = featurizer4bs.get_features(bs)
+
+    # Create Protein object and process ASA with DMS and K-Means
+    protein = Protein(prot_file=prot_input_file, protonate=False, expand_residue=False, f=150, save_path="../data/ShitGeneratedBYdefault", discard_points=False)
+
+    featurizer.get_channels(protein.mol)
 
     prot_grids = []
-    for p,n in zip(protein.surf_points,protein.surf_normals):
-        # Then make the grids
-        # grid_feats --> tfbio_data.make_grid()
-        grid = featurizer.grid_feats(p,n,protein.heavy_atom_coords)  
+    bs_grids = []
+
+    for idx, (p, n) in enumerate(zip(protein.surf_points, protein.surf_normals)):
+        # Create the protein grid
+        grid = featurizer.grid_feats(p, n, protein.heavy_atom_coords)  
         prot_grids.append(grid)
 
-    # Convert list of grids to a numpy array
+        # Create binding site features based on coordinates
+        bs_features = create_binding_site_features(p, bs_coords)
+
+        # Create the binding site grid
+        bs_grid = featurizer.grid_feats(p, n, protein.heavy_atom_coords, bs_features)  
+        bs_grids.append(bs_grid)
+        
+    # Convert lists of grids to numpy arrays
     prot_grids = np.array(prot_grids)
-    
-    if bs_input_file:
-        bs = next(pybel.readfile(file_type, bs_input_file))
-        # _get_channels --> featurizer.get_features --> return coords, features
-        # But we only need the coord because it's the output
-        bs_coords, bs_features =  featurizer4bs.get_features(bs)
-        bs_features = np.ones((len(bs_coords), 1))
-        # bs_coords -= centroid
-        bs_grid = make_grid(bs_coords, bs_features, max_dist=max_dist, grid_resolution=grid_resolution)
-        print("Created binding site grid for:", bs_input_file)
-    else:
-        bs_grid = None
-    
-    return prot_grids, bs_grid, centroid
+    bs_grids = np.array(bs_grids)
+    print("All grids converted to numpy arrays.")
+
+    return prot_grids, bs_grids, None
+
 
 def get_training_data_V2(input_folder, proteins_pkl='GOODproteins.pkl', binding_sites_pkl='binding_sites.pkl'):
     """
@@ -265,15 +277,17 @@ def get_training_data_V2(input_folder, proteins_pkl='GOODproteins.pkl', binding_
     proteins = None
     binding_sites = None
     centroids = []
-
+    count = 0
     for root, dirs, _ in os.walk(input_folder, topdown=False):
-        for dir in dirs:
+        for dir in dirs[:1000]:
             protein_file = os.path.join(root, dir, "protein.pdb")
             site_file = os.path.join(root, dir, "cavity6.pdb")
             
             print("Processing protein file:", protein_file)
             print("Processing binding site file:", site_file)
-
+            print("===============================================")
+            print("MISSING proteins to process: ", len(dirs[:1000])- count)
+            count +=1
             try:
                 # A new get_grids should be implemented and used here
                 prot_grids, bs_grid, centroid = get_grids_V2("pdb", protein_file, site_file, grid_resolution=1, max_dist=7.5)

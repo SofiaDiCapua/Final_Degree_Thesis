@@ -225,4 +225,4 @@ if __name__ == "__main__":
     print(binding_sites.shape) # It should give (2368, 16, 16, 16, 1)
 
     # Call train function
-    train_function(data_folder_path, proteins, binding_sites, batch_size, epochs, loss_function, final_weights_file, model_name = "NoDeepSurf")
+    train_function(data_folder_path, proteins, binding_sites, batch_size, epochs, loss_function, final_weights_file, model_name = "DeepSurfGRIDs")

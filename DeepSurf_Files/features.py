@@ -23,7 +23,7 @@ class KalasantyFeaturizer:
     def get_channels(self,mol):
         _, self.channels = self.featurizer.get_features(mol)  # returns only heavy atoms
         
-    def grid_feats(self,point,normal,mol_coords):
+    def grid_feats(self,point,normal,mol_coords, bs_features=None):
         """
         Aquí se obtiene una matriz de rotación Q a partir del vector normal normal. 
         Luego, se calcula su inversa Q_inv. Las coordenadas de los átomos vecinos 
@@ -36,8 +36,16 @@ class KalasantyFeaturizer:
         Q_inv = np.linalg.inv(Q)
         transf_coords = np.transpose(mol_coords[neigh_atoms]-point)
         rotated_mol_coords = np.matmul(Q_inv,transf_coords)
-        features = tfbio_data.make_grid(np.transpose(rotated_mol_coords),self.channels[neigh_atoms],self.grid_resolution,self.max_dist)[0]
-        
+        if bs_features is None:
+            features = tfbio_data.make_grid(np.transpose(rotated_mol_coords),self.channels[neigh_atoms],self.grid_resolution,self.max_dist)[0]
+        else: 
+            N = self.channels[neigh_atoms].shape[0]
+            if bs_features == 0:
+                bs_features = np.zeros((N, 1), dtype=float)
+            else:
+                bs_features = np.ones((N, 1), dtype=float)
+            features = tfbio_data.make_grid(np.transpose(rotated_mol_coords),bs_features,self.grid_resolution,self.max_dist)[0]
+
         return features
         
         
