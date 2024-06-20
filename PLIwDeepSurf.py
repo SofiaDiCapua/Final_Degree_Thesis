@@ -27,7 +27,7 @@ def calculate_pli_scores(ligand_base_path, pocket_base_path):
     pli_scores = []
 
     for subdir in ligand_subdirs[:5]:
-        ligand_file_path = os.path.join(ligand_base_path, subdir, 'ligand.pdb')
+        ligand_file_path = os.path.join(ligand_base_path, subdir, 'site.pdb')
         pocket_file_path = os.path.join(pocket_base_path, subdir, 'protein', 'pocket1.pdb')
         
         # Verify that both files exist
@@ -41,9 +41,9 @@ def calculate_pli_scores(ligand_base_path, pocket_base_path):
     return np.array(pli_scores)
 
 # Use the function
-ligand_base_path = '/home/lmc/Documents/Sofia_TFG/data/test/coach420'
-#pocket_base_path = '/home/lmc/Documents/Sofia_TFG/data/Results4PLI'
-pocket_base_path = '/home/lmc/Documents/Sofia_TFG/Final_Degree_Thesis/DeepSurf_Files'
+ligand_base_path = '/home/lmc/Documents/Sofia_TFG/data/test/Test4Both'
+pocket_base_path = '/home/lmc/Documents/Sofia_TFG/data/Results4PLI'
+#pocket_base_path = '/home/lmc/Documents/Sofia_TFG/Final_Degree_Thesis/DeepSurf_Files'
 
 pli_scores = calculate_pli_scores(ligand_base_path, pocket_base_path)
 
