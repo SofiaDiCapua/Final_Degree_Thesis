@@ -22,6 +22,7 @@ sys.path.append(puresnet_path)
 # Intentar importar el módulo
 from PUResNet import PUResNet
 
+from ..train_PUResNet import modify_PUResNet
 
 class Network:
     def __init__(self,model_path,model,voxelSize):
@@ -31,7 +32,11 @@ class Network:
         
         # New implementation
         if model == 'PUResNet':
-            self.model = PUResNet()
+            self.model = self.modify_PUResNet(
+                new_input_shape=(gridSize, gridSize, gridSize, 18),
+                new_output_shape=(gridSize, gridSize, gridSize, 1),
+                weights_path=os.path.join(model_path, 'whole_trained_model1.hdf')
+            )
         # Old implementation
         else :
             if model=='orig':
@@ -52,7 +57,7 @@ class Network:
         
         # New implementation that uses keras (as PUResNet does)
         if model == 'PUResNet':
-            self.model.load_weights(os.path.join(model_path, 'final_weights.h5'))
+            self.model.load_weights(os.path.join(model_path, 'final_weights_1GRID.hdf'))
         # Old implementation that used tensorflow 
         else :
             saver = tf.train.Saver()

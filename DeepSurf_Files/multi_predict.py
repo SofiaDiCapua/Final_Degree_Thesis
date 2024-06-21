@@ -19,7 +19,7 @@ def parse_args():
     #parser.add_argument('--dataset_file', '-d', required=True, help='dataset file with protein names')
     parser.add_argument('--protein_path', '-pp', required=True, help='directory of protein files')
     parser.add_argument('--model_path', '-mp', required=True, help='directory of models')
-    parser.add_argument('--model', '-m', choices=['orig','lds'], default='orig', help='select model')
+    parser.add_argument('--model', '-m', choices=['orig','lds', 'PUResNet'], default='orig', help='select model')
     parser.add_argument('--output', '-o', required=True, help='name of the output directory')
     parser.add_argument('--f', type=int, default=10, help='parameter for the simplification of points mesh')
     parser.add_argument('--T', type=float, default=0.9, help='ligandability threshold')

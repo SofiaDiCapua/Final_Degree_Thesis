@@ -11,7 +11,10 @@ Attributes:
 
 import numpy as np
 import os
-from PUResNet_files.metrics import get_PLI
+import sys
+
+
+from PUResNet_Files.metrics import get_PLI
 
 def calculate_pli_scores(ligand_base_path, pocket_base_path):
     # Verify that the base paths exist
@@ -26,7 +29,7 @@ def calculate_pli_scores(ligand_base_path, pocket_base_path):
     # Initialize a list to store the PLI results
     pli_scores = []
 
-    for subdir in ligand_subdirs[:5]:
+    for subdir in ligand_subdirs:
         ligand_file_path = os.path.join(ligand_base_path, subdir, 'site.pdb')
         pocket_file_path = os.path.join(pocket_base_path, subdir, 'protein', 'pocket1.pdb')
         
@@ -41,13 +44,13 @@ def calculate_pli_scores(ligand_base_path, pocket_base_path):
     return np.array(pli_scores)
 
 # Use the function
-ligand_base_path = '/home/lmc/Documents/Sofia_TFG/data/test/Test4Both'
-pocket_base_path = '/home/lmc/Documents/Sofia_TFG/data/Results4PLI'
+ligand_base_path = '/home/ubuntu/tfg/data/test/Test4Both'
+pocket_base_path = '/home/ubuntu/tfg/data/Results4PLI'
 #pocket_base_path = '/home/lmc/Documents/Sofia_TFG/Final_Degree_Thesis/DeepSurf_Files'
 
 pli_scores = calculate_pli_scores(ligand_base_path, pocket_base_path)
 
 print('PLI Scores:', pli_scores)
-
+print('PLI Scores mean:', pli_scores.mean())
 # ANTES HAY QUE HACER 
 # python multi_predict.py -p ../../data/test/Test4Both -mp models -o ../../data/Results4PLI

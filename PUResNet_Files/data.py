@@ -513,7 +513,7 @@ def make_grid(coords, features, grid_resolution=1.0, max_dist=10.0):
 
     box_size = ceil(2 * max_dist / grid_resolution + 1)
 
-    # move all atoms to the neares grid point
+    # move all atoms to the nearest grid point
     grid_coords = (coords + max_dist) / grid_resolution
     grid_coords = grid_coords.round().astype(int)
 

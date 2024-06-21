@@ -16,7 +16,7 @@ from keras.layers import Input, Convolution3D, Conv3D, UpSampling3D, Cropping3D,
 import matplotlib.pyplot as plt
 import pandas as pd
 from keras.regularizers import l2
-from tensorflow.keras.metrics import Precision, Recall
+from tensorflow.keras.metrics import Recall, Precision, TruePositives, FalsePositives, FalseNegatives
 
 # Add folders to the PYTHONPATH
 sys.path.append(os.path.abspath('DeepSurf_Files'))
@@ -150,7 +150,18 @@ def train_function(data_folder_path, X, y, batch_size, epochs, loss_function, fi
     # Print the summary of the modified model
     print(modified_model.summary())
     
-    modified_model.compile(loss=loss_function, optimizer = "adam", metrics=["accuracy", Recall(), Precision()])
+    modified_model.compile(
+    loss=loss_function, 
+    optimizer="adam", 
+    metrics=[
+        "accuracy", 
+        Recall(), 
+        Precision(), 
+        TruePositives(name='tp'), 
+        FalsePositives(name='fp'), 
+        FalseNegatives(name='fn')
+    ]
+)
 
     # # OJO
     # precision = tf.metrics.precision(labels, predictions)
@@ -209,7 +220,7 @@ if __name__ == "__main__":
     final_weights_file = "../data"
     ## DEFINE VARIABLES ##
     batch_size = 5
-    epochs = 20
+    epochs = 10
     loss_function = DiceLoss
     k = 4  # Number of folds for K-fold cross-validation
 
@@ -218,7 +229,7 @@ if __name__ == "__main__":
     pybel.ob.obErrorLog.StopLogging()
     # To see warnings: pybel.ob.obErrorLog.StartLogging()
     # proteins, binding_sites, _ = get_training_data(data_folder_path, proteins_pkl='../data/proteins.pkl', binding_sites_pkl='../data/binding_sites.pkl') 
-    proteins, binding_sites, _ = get_training_data_V2(data_folder_path, proteins_pkl='../data/GOODproteins.pkl', binding_sites_pkl='../data/GOODbinding_sites.pkl') 
+    proteins, binding_sites, _ = get_training_data_V2(data_folder_path, proteins_pkl='GOODproteins.pkl', binding_sites_pkl='GOODbinding_sites.pkl') 
 
     # Check that the two sets have the same number of training parameters
     print(proteins.shape) # It should give (2368, 16, 16, 16, 18)
