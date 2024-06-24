@@ -30,11 +30,12 @@ def compare_grids(file_type, prot_input_file, bs_input_file=None):
         print("New grids achieved")
 
 
-        print("Prot_grid_old : \n" , prot_grid_old.shape)
+        #print("Prot_grid_old : \n" , prot_grid_old.shape)
         print("Prot_grid_new : \n" , prot_grids_new.shape)
-        print("BS_grid_old : \n" , bs_grid_old.shape)
+        #print("BS_grid_old : \n" , bs_grid_old.shape)
         print("BS_grid_new : \n" , bs_grid_new.shape)
-
+        print(f'Tamaño de prot_grids_new: {sys.getsizeof(prot_grids_new)} bytes')
+        print(f'Tamaño de bs_grids_new: {sys.getsizeof(bs_grid_new)} bytes')
 
         # # Visualizar los resultados
         # if prot_grid_old is not None:

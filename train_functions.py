@@ -318,18 +318,17 @@ def get_training_data_V2(input_folder, proteins_pkl='GOODproteins.pkl', binding_
             print("MISSING proteins to process:", len(dirs[:1000]) - count)
             count += 1
 
-            # if dir in dirs[:100]:
             if os.path.exists(protein_pkl) and os.path.exists(binding_site_pkl):
-                    print(f"Pickle files already exist for {dir}. Skipping processing.")
-                    prot_grids = from_pickle(protein_pkl)
-                    bs_grid = from_pickle(binding_site_pkl)
-                    if proteins is None:
-                        proteins = prot_grids
-                        binding_sites = bs_grid
-                    else:
+                print(f"Pickle files already exist for {dir}. Skipping processing.")
+                prot_grids = from_pickle(protein_pkl)
+                bs_grid = from_pickle(binding_site_pkl)
+                if proteins is None:
+                    proteins = prot_grids
+                    binding_sites = bs_grid
+                else:
                         proteins = np.concatenate((proteins, prot_grids), axis=0)
                         binding_sites = np.concatenate((binding_sites, bs_grid), axis=0)
-                    continue
+                continue
 
             try:
                 print("No valid pickle files found, processing data...")

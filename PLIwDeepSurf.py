@@ -52,5 +52,3 @@ pli_scores = calculate_pli_scores(ligand_base_path, pocket_base_path)
 
 print('PLI Scores:', pli_scores)
 print('PLI Scores mean:', pli_scores.mean())
-# ANTES HAY QUE HACER 
-# python multi_predict.py -p ../../data/test/Test4Both -mp models -o ../../data/Results4PLI

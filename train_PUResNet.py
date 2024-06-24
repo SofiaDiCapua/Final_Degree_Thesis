@@ -220,7 +220,7 @@ if __name__ == "__main__":
     final_weights_file = "../data"
     ## DEFINE VARIABLES ##
     batch_size = 5
-    epochs = 10
+    epochs = 2
     loss_function = DiceLoss
     k = 4  # Number of folds for K-fold cross-validation
 
