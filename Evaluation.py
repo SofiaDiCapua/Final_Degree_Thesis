@@ -1,131 +1,50 @@
-# # FOR DEEPSURF'S EVALUATION
-# import os
-# import sys
-# import pandas as pd
-# import numpy as np
-# from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-# from openbabel import pybel
-
-# # Add folders to the PYTHONPATH
-# sys.path.append(os.path.abspath('DeepSurf_Files'))
-# sys.path.append(os.path.abspath('PUResNet_Files'))
-
-# import tfbio_data 
-
-# from PUResNet_Files.data import make_grid
-
-# """
-# This file is supossed to use a folder with outputs of DeepSurf algorithm with diferent ANN.
-# The metric to evaluate each folder would be Success Rate with DCC
-# DCC --> Distance Center Center  
-# Success Rate --> Num of sites having DDC <= 4 Amstrongs  /  Total num of sites
-# Total num of sites --> if centers.txt is not empty
-# """
-
-# # BEFORE RUNNING THIS FILE:
-# # python multi_predict.py -p ../../data/test/Test4Both -mp models -o ../../data/Results4PLI
-# # python multi_predict.py -p ../../data/test/Test4Both -mp ../../data -m PUResNet  -o ../../data/Results4PLI_1GRID
-# # Change weights file in Network.py to test the huge model
-# # python multi_predict.py -p ../../data/test/Test4Both -mp ../../data -m PUResNet  -o ../../data/Results4PLI_GRIDs
-
-
-# def create_binding_site_features(p, bs_coords):
-#     """
-#     Create binding site features where coordinates match bs_coords.
-#     """
-#     bs_features = 0
-#     if any(np.allclose(p, bs_coord, atol=4) for bs_coord in bs_coords):
-#         bs_features = 1
-#     return bs_features 
-
-# def load_pdb_and_create_grid(file_path, featurizer, grid_resolution=1, max_dist=8):
-#     bs = next(pybel.readfile('pdb', file_path))
-#     bs_coords, _ = featurizer.get_features(bs)  
-#     bs_features = create_binding_site_features(p, bs_coords) 
-#     bs_grid = make_grid(bs_coords, bs_features, max_dist=max_dist, grid_resolution=grid_resolution)
-#     return bs_grid
-
-
-# # Función para obtener la lista de archivos .pdb en una carpeta y sus subcarpetas
-# def get_pdb_files(directory, file_name, max_dirs=200):
-#     pdb_files = []
-#     dir_count = 0
-#     processed_dirs = set()
-    
-#     for root, dirs, files in os.walk(directory):
-#         for dir in dirs:
-#             if dir_count >= max_dirs:
-#                 break
-#             if dir in processed_dirs:
-#                 continue
-            
-#             protein_file = os.path.join(root, dir, file_name)
-#             if os.path.isfile(protein_file):
-#                 pdb_files.append(protein_file)
-#                 processed_dirs.add(dir)
-#                 dir_count += 1
-        
-#         if dir_count >= max_dirs:
-#             break
-    
-#     return pdb_files
-
-# def evaluate_directory(true_dir, pred_dir, featurizer, grid_resolution=1, max_dist=8, max_dirs=200):
-#     true_files = get_pdb_files(true_dir, 'site.pdb', max_dirs=max_dirs)
-#     pred_files = get_pdb_files(pred_dir, 'pocket1.pdb', max_dirs=max_dirs)
-
-#     accuracies, precisions, recalls, f1_scores = [], [], [], []
-
-#     for true_file, pred_file in zip(true_files, pred_files):
-#         y_true_grid = load_pdb_and_create_grid(true_file, featurizer, grid_resolution, max_dist)
-#         y_pred_grid = load_pdb_and_create_grid(pred_file, featurizer, grid_resolution, max_dist)
-        
-#         accuracy, precision, recall, f1 = calculate_metrics(y_true_grid, y_pred_grid)
-        
-#         accuracies.append(accuracy)
-#         precisions.append(precision)
-#         recalls.append(recall)
-#         f1_scores.append(f1)
-    
-#     avg_accuracy = np.mean(accuracies)
-#     avg_precision = np.mean(precisions)
-#     avg_recall = np.mean(recalls)
-#     avg_f1 = np.mean(f1_scores)
-
-#     return avg_accuracy, avg_precision, avg_recall, avg_f1
-
-# # Definir rutas de las carpetas que contienen las predicciones y las etiquetas verdaderas
-# true_dir = "../data/test/Test4Both"
-# pred_dir = "../data/Results4PLI"
-
-# # Asegúrate de que tienes una instancia de featurizer definida en tu entorno
-# featurizer = tfbio_data.Featurizer(save_molecule_codes=False)
-
-# accuracy, precision, recall, f1 = evaluate_directory(true_dir, pred_dir, featurizer)
-# print(f"Average Accuracy: {accuracy}")
-# print(f"Average Precision: {precision}")
-# print(f"Average Recall: {recall}")
-# print(f"Average F1-Score: {f1}")
-
-# # Almacenar resultados
-# results = {
-#     "Accuracy": accuracy,
-#     "Precision": precision,
-#     "Recall": recall,
-#     "F1 Score": f1
-# }
-
-# # Crear un DataFrame con los resultados
-# results_df = pd.DataFrame([results])
-
-# # Mostrar la tabla de resultados
-# print(results_df)
-
-# # Guardar la tabla de resultados a un archivo CSV
-# results_df.to_csv(os.path.join("../data", "DeepSurf_evaluation_results.csv"), index=False)
-
-
+import os
+import sys
 import numpy as np
+from openbabel import pybel
+
+"""
+This file is supossed to use a folder with outputs of DeepSurf algorithm with diferent ANN.
+The metric to evaluate each folder would be Success Rate with DCC
+DCC --> Distance Center Center  
+Success Rate --> Num of sites having DDC <= 4 Amstrongs  /  Total num of sites
+Total num of sites --> if centers.txt is not empty
+
+DEEPSURF ORIGINAL:
+Average Success Rate: 70.15%
+Average Success Rate Top-1: 75.82%
+F1 Score: 0.76
+"""
+
+# BEFORE RUNNING THIS FILE:
+# python multi_predict.py -p ../../data/test/Test4Both -mp models -o ../../data/Results4PLI
+# python multi_predict.py -p ../../data/test/Test4Both -mp ../../data -m PUResNet  -o ../../data/Results4PLI_1GRID
+# Change weights file in Network.py to test the huge model
+# python multi_predict.py -p ../../data/test/Test4Both -mp ../../data -m PUResNet  -o ../../data/Results4PLI_GRIDs
+
+
+def get_files(directory, subfolder, file_name, max_dirs=100):
+    pdb_files = []
+    dir_count = 0
+    processed_dirs = set()
+    
+    for root, dirs, files in os.walk(directory):
+        for dir in dirs:
+            if dir_count >= max_dirs:
+                break
+            if dir in processed_dirs:
+                continue
+            
+            protein_file = os.path.join(root, dir, subfolder, file_name)
+            if os.path.isfile(protein_file):
+                pdb_files.append(protein_file)
+                processed_dirs.add(dir)
+                dir_count += 1
+        
+        if dir_count >= max_dirs:
+            break
+    
+    return pdb_files
 
 def read_predicted_centers(filename):
     with open(filename, 'r') as file:
@@ -144,7 +63,6 @@ def read_real_centers_from_pdb(filename):
             coords.append([x, y, z])
     coords = np.array(coords)
     center = np.mean(coords, axis=0)
-    print("The center of the .pdb is : ", center)
     return center
 
 def calculate_success_rate(predicted_centers, real_center, threshold=4.0):
@@ -153,21 +71,75 @@ def calculate_success_rate(predicted_centers, real_center, threshold=4.0):
         distance = np.linalg.norm(pred_center - real_center)
         if distance <= threshold:
             success_count += 1
-    print(success_count)
-    print(len(predicted_centers))
     success_rate = success_count / len(predicted_centers) if len(predicted_centers) > 0 else 0
     return success_rate
 
-def main():
-    predicted_centers_file = '../data/Results4PLI/1ae1_2/protein/centers.txt'
-    # HAY QUE VER QUE ARCHIVO .PDB DA EL MEJOR SUCCESS RATE
-    real_centers_pdb_file = '../data/test/Test4Both/1ae1_2/ligand.pdb'
-    
-    predicted_centers = read_predicted_centers(predicted_centers_file)
-    real_center = read_real_centers_from_pdb(real_centers_pdb_file)
-    
-    success_rate = calculate_success_rate(predicted_centers, real_center)
-    print(f'Success Rate: {success_rate * 100:.2f}%')
+def calculate_success_rate_bestBS(predicted_centers, real_center, threshold=4.0):
+    if len(predicted_centers) == 0:
+        return 0
+    # Calcula todas las distancias y selecciona la menor
+    distances = [np.linalg.norm(pred_center - real_center) for pred_center in predicted_centers]
+    min_distance = min(distances)
+    # Comprueba si la menor distancia está dentro del umbral
+    success_count = 1 if min_distance <= threshold else 0
+    success_rate = success_count / 1  # Solo se evalúa el mejor sitio predicho
+    return success_rate
 
-if __name__ == "__main__":
-    main()
+
+def calculate_metrics(predicted_centers, real_center, threshold=4.0):
+    tp = 0
+    fp = 0
+    fn = 0  # If there's at least one prediction, then FN is 0
+    if predicted_centers is None:
+        fn = 1 
+    distances = [np.linalg.norm(pred_center - real_center) for pred_center in predicted_centers]
+    min_distance = min(distances)
+    if min_distance <= threshold:
+        tp += 1
+    else:
+        fp += 1
+    return tp, fp, fn
+
+def evaluate_directory(true_dir, pred_dir, max_dirs=200):
+    true_files_dict = {os.path.basename(os.path.dirname(f)): f for f in get_files(true_dir, '', 'ligand.pdb', max_dirs=max_dirs)}
+    pred_files_dict = {os.path.basename(os.path.dirname(os.path.dirname(f))): f for f in get_files(pred_dir, 'protein', 'centers.txt', max_dirs=max_dirs)}
+
+    success_rates1 = []
+    success_rates2 = []
+    tps, fps, fns = 0, 0, 0
+    common_keys = set(true_files_dict.keys()).intersection(set(pred_files_dict.keys()))
+
+    for key in common_keys:
+        true_file = true_files_dict[key]
+        pred_file = pred_files_dict[key]
+        
+        real_center = read_real_centers_from_pdb(true_file)
+        predicted_centers = read_predicted_centers(pred_file)
+        success_rate1 = calculate_success_rate(predicted_centers, real_center)
+        success_rate2 = calculate_success_rate_bestBS(predicted_centers, real_center)
+        success_rates1.append(success_rate1)
+        success_rates2.append(success_rate2)
+        
+        tp, fp, fn = calculate_metrics(predicted_centers, real_center)
+        tps += tp
+        fps += fp
+        fns += fn
+
+    avg_success_rate1 = np.mean(success_rates1) if success_rates1 else 0
+    avg_success_rate2 = np.mean(success_rates2) if success_rates2 else 0
+    precision = tps / (tps + fps) if (tps + fps) > 0 else 0
+    recall = tps / (tps + fns) if (tps + fns) > 0 else 0
+    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        
+    return avg_success_rate1, avg_success_rate2, precision, recall, f1
+
+# Definir rutas de las carpetas que contienen las predicciones y las etiquetas verdaderas
+true_dir = "../data/test/Test4Both"
+pred_dir = "../data/Results4PLI_1GRIDs"
+
+avg_success_rate1, avg_success_rate2, precision, recall, f1 = evaluate_directory(true_dir, pred_dir)
+print(f"Average Success Rate: {avg_success_rate1 * 100:.2f}%")
+print(f"Average Success Rate Top-1: {avg_success_rate2 * 100:.2f}%")
+print(f"Precision: {f1:.2f}")
+print(f"Recall: {f1:.2f}")
+print(f"F1 Score: {f1:.2f}")

@@ -123,7 +123,7 @@ class Network:
             self.model = ModifiedPUResNet(
                 new_input_shape=(gridSize, gridSize, gridSize, 18),
                 new_output_shape=(gridSize, gridSize, gridSize, 1),
-                weights_path=os.path.join(model_path, 'final_weights_1GRID.hdf') # CAMBIAR ESTO A PESOS MODELO TOCHO
+                weights_path=os.path.join(model_path, 'final_weights_DeepSurfGRIDs.hdf') # CAMBIAR ESTO A PESOS MODELO TOCHO
             )
         # Old implementation
         else :
