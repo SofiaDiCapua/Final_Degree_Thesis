@@ -1,4 +1,7 @@
-# DeepSurf
+# Final_Degree_Thesis
+Code for my final thesis about the evaluation an integration of ANN for prediction improvement of ligand-protein biding sites.
+
+## DeepSurf
 A surface-based deep learning approach for the prediction of ligand binding sites on proteins (https://doi.org/10.1093/bioinformatics/btab009)
 
 Setup
